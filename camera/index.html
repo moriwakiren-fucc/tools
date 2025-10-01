@@ -5,87 +5,68 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    overflow: hidden;
-    background: black;
-    font-family: sans-serif;
-  }
+html, body {
+  margin: 0; height: 100%; overflow: hidden; background: black;
+}
 
-  video, img#preview {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    background: black;
-  }
+video, img#preview {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  background: black;
+}
 
-  img#preview {
-    display: none;
-    z-index: 2;
-  }
+img#preview { display: none; z-index: 2; }
 
-  .controls {
-    position: absolute;
-    bottom: 40px;
-    left: 0;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 60px;
-    z-index: 3;
-  }
+.controls {
+  position: absolute;
+  bottom: 40px;
+  left: 0; width: 100%;
+  display: flex; justify-content: center; align-items: center;
+  gap: 40px;
+  z-index: 3;
+}
 
-  #switchCam {
-    position: absolute;
-    bottom: 120px;
-    left: 20px;
-    font-size: 1.6em;
-    color: white;
-    background: rgba(0,0,0,0.3);
-    padding: 10px 14px;
-    border-radius: 8px;
-    border: none;
-    z-index: 3;
-  }
+#switchCam {
+  position: absolute;
+  bottom: 120px; left: 20px;
+  font-size: 1.4em; color: white;
+  background: rgba(0,0,0,0.3); padding: 8px 12px;
+  border-radius: 8px; border: none; z-index: 3;
+}
 
-  button {
-    border: none;
-    cursor: pointer;
-  }
+#zoomSlider {
+  position: absolute;
+  bottom: 200px; left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  z-index: 3;
+}
 
-  .shutter {
-    width: 80px;
-    height: 80px;
-    border: 4px solid white;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.8);
-    box-shadow: 0 0 10px rgba(0,0,0,0.6);
-  }
+#aspectBtn {
+  position: absolute;
+  top: 20px; right: 20px;
+  background: rgba(0,0,0,0.3); color: white;
+  padding: 8px 12px; border-radius: 8px; border: none;
+  z-index: 3;
+}
 
-  .share {
-    font-size: 1.6em;
-    color: white;
-    background: rgba(0,0,0,0.3);
-    padding: 12px 16px;
-    border-radius: 12px;
-    display: none;
-  }
+.shutter {
+  width: 80px; height: 80px;
+  border: 4px solid white; border-radius: 50%;
+  background: rgba(255,255,255,0.8);
+}
 
-  .ios .shutter {
-    background: white;
-    border: 5px solid rgba(255,255,255,0.8);
-  }
-
-  .android .shutter {
-    background: #eee;
-    border: 5px solid #fff;
-  }
+.focus-ring {
+  position: absolute;
+  border: 2px solid yellow;
+  border-radius: 50%;
+  width: 80px; height: 80px;
+  pointer-events: none;
+  display: none;
+  z-index: 4;
+}
 </style>
 </head>
 <body>
@@ -94,52 +75,97 @@
 <img id="preview" alt="撮影画像">
 
 <button id="switchCam">🔄</button>
+<input type="range" id="zoomSlider" min="1" max="5" step="0.1" value="1">
+<button id="aspectBtn">フル</button>
 
 <div class="controls">
   <button id="captureBtn" class="shutter"></button>
-  <button id="shareBtn" class="share">📤</button>
 </div>
+
+<div id="focusRing" class="focus-ring"></div>
 
 <script>
 const video = document.getElementById('camera');
 const preview = document.getElementById('preview');
 const captureBtn = document.getElementById('captureBtn');
-const shareBtn = document.getElementById('shareBtn');
 const switchCamBtn = document.getElementById('switchCam');
+const zoomSlider = document.getElementById('zoomSlider');
+const aspectBtn = document.getElementById('aspectBtn');
+const focusRing = document.getElementById('focusRing');
 
-let capturedBlob = null;
 let currentFacingMode = 'environment';
+let stream = null;
+let track = null;
+let currentAspect = 'fill'; // 'fill', '4:3', '1:1'
 
-// --- OS判別 ---
-const ua = navigator.userAgent.toLowerCase();
-if (/iphone|ipad|ipod/.test(ua)) {
-  document.body.classList.add('ios');
-} else if (/android/.test(ua)) {
-  document.body.classList.add('android');
-}
-
-// --- カメラ起動 ---
+// --- カメラ初期化 ---
 async function initCamera(facingMode = 'environment') {
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+  }
+
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
+    stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: facingMode }
     });
     video.srcObject = stream;
-    video.style.display = 'block';
-    preview.style.display = 'none';
-    shareBtn.style.display = 'none';
-  } catch (err) {
+
+    track = stream.getVideoTracks()[0];
+    setupZoomSlider();
+  } catch(err) {
     alert('カメラを利用できません: ' + err.message);
   }
 }
 
-initCamera(currentFacingMode);
+// --- ズーム対応確認 ---
+function setupZoomSlider() {
+  const caps = track.getCapabilities();
+  if (caps.zoom) {
+    zoomSlider.min = caps.zoom.min;
+    zoomSlider.max = caps.zoom.max;
+    zoomSlider.step = caps.zoom.step || 0.1;
+    zoomSlider.value = track.getSettings().zoom || caps.zoom.min;
+    zoomSlider.style.display = 'block';
+  } else {
+    zoomSlider.style.display = 'none';
+  }
+}
+
+// --- ズーム変更 ---
+zoomSlider.addEventListener('input', async () => {
+  try {
+    await track.applyConstraints({ advanced: [{ zoom: parseFloat(zoomSlider.value) }] });
+  } catch(e) {
+    console.log('ズーム変更失敗', e);
+  }
+});
+
+// --- アスペクト比切替 ---
+aspectBtn.addEventListener('click', () => {
+  if (currentAspect === 'fill') {
+    video.style.objectFit = 'contain';
+    video.style.aspectRatio = '4 / 3';
+    currentAspect = '4:3';
+    aspectBtn.textContent = '4:3';
+  } else if (currentAspect === '4:3') {
+    video.style.aspectRatio = '1 / 1';
+    currentAspect = '1:1';
+    aspectBtn.textContent = '1:1';
+  } else {
+    video.style.objectFit = 'cover';
+    video.style.aspectRatio = 'auto';
+    currentAspect = 'fill';
+    aspectBtn.textContent = 'フル';
+  }
+});
 
 // --- カメラ切替 ---
 switchCamBtn.addEventListener('click', () => {
   currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
   initCamera(currentFacingMode);
 });
+
+initCamera(currentFacingMode);
 
 // --- 撮影 ---
 captureBtn.addEventListener('click', () => {
@@ -149,40 +175,53 @@ captureBtn.addEventListener('click', () => {
   canvas.getContext('2d').drawImage(video, 0, 0);
 
   canvas.toBlob(blob => {
-    capturedBlob = blob;
     preview.src = URL.createObjectURL(blob);
     preview.style.display = 'block';
     video.style.display = 'none';
 
-    // ✅ 0.5秒後にカメラに戻る
+    // 0.5秒後に戻す
     setTimeout(() => {
       preview.style.display = 'none';
       video.style.display = 'block';
-      // 共有ボタンは必要なら手動で表示
-      // shareBtn.style.display = 'inline-block';
     }, 500);
   }, 'image/jpeg');
 });
 
-// --- 共有 ---
-shareBtn.addEventListener('click', async () => {
-  if (!capturedBlob) return;
-  const file = new File([capturedBlob], 'photo.jpg', { type: 'image/jpeg' });
+// --- タップでフォーカス＆露出 ---
+video.addEventListener('click', async (e) => {
+  if (!track) return;
 
-  if (navigator.share) {
-    try {
-      await navigator.share({
-        files: [file],
-        text: '撮影した写真を共有します'
-      });
-    } catch (err) {
-      console.log('共有がキャンセルされました:', err);
-    }
-  } else {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(capturedBlob);
-    a.download = 'photo.jpg';
-    a.click();
+  const rect = video.getBoundingClientRect();
+  const x = (e.clientX - rect.left) / rect.width;
+  const y = (e.clientY - rect.top) / rect.height;
+
+  // フォーカスリング表示
+  focusRing.style.left = `${e.clientX - 40}px`;
+  focusRing.style.top = `${e.clientY - 40}px`;
+  focusRing.style.display = 'block';
+  setTimeout(() => focusRing.style.display = 'none', 800);
+
+  const caps = track.getCapabilities();
+  const constraints = {};
+
+  if (caps.focusMode && caps.focusMode.includes('single-shot')) {
+    constraints.advanced = [{ focusMode: 'single-shot' }];
+  }
+
+  if (caps.exposureMode && caps.exposureMode.includes('continuous')) {
+    if (!constraints.advanced) constraints.advanced = [];
+    constraints.advanced.push({ exposureMode: 'continuous' });
+  }
+
+  if (caps.pointsOfInterest) {
+    if (!constraints.advanced) constraints.advanced = [];
+    constraints.advanced.push({ pointsOfInterest: [{ x, y }] });
+  }
+
+  try {
+    await track.applyConstraints(constraints);
+  } catch(err) {
+    console.log('フォーカス制御に失敗', err);
   }
 });
 </script>
