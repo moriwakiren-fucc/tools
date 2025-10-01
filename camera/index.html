@@ -3,39 +3,115 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
   body {
-    font-family: sans-serif;
-    text-align: center;
     margin: 0;
-    padding: 20px;
+    height: 100vh;
+    background: black;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-family: sans-serif;
   }
+
   video, img {
-    width: 90%;
-    max-width: 400px;
-    border: 1px solid #ccc;
+    width: 100%;
+    height: auto;
+    background: black;
+    flex: 1;
+    object-fit: contain;
+  }
+
+  /* ボタン共通 */
+  .controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.5);
+    padding: 15px 0;
+  }
+
+  button {
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  /* --- デフォルト（Windows向け） --- */
+  .shutter {
+    width: 70px;
+    height: 70px;
+    border: 4px solid white;
+    border-radius: 50%;
+    background: #ddd;
+    box-shadow: 0 0 8px #555;
+  }
+
+  .share {
+    margin-left: 30px;
+    font-size: 1.4em;
+    color: white;
+    background: rgba(255,255,255,0.2);
+    padding: 8px 16px;
     border-radius: 8px;
   }
-  button {
-    display: block;
-    width: 200px;
-    margin: 15px auto;
-    padding: 10px;
-    font-size: 1.1em;
+
+  /* --- iOS風 --- */
+  .ios .shutter {
+    width: 80px;
+    height: 80px;
+    border: 4px solid white;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 0 8px #444;
+  }
+
+  .ios .share {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255,255,255,0.3);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 1.2em;
+  }
+
+  /* --- Android風 --- */
+  .android .shutter {
+    width: 85px;
+    height: 85px;
+    border: 4px solid #fff;
+    border-radius: 50%;
+    background: #eee;
+    box-shadow: 0 0 8px #000;
+  }
+
+  .android .share {
+    position: absolute;
+    bottom: 100px;
+    right: 20px;
+    background: rgba(255,255,255,0.25);
+    padding: 12px;
+    border-radius: 50%;
+    font-size: 1.5em;
+    color: white;
+  }
+
+  img#preview {
+    display: none;
   }
 </style>
 </head>
 <body>
 
-<h1>カメラ撮影</h1>
-
 <video id="camera" autoplay playsinline></video>
-<br>
-<button id="captureBtn">📸 撮影</button>
+<img id="preview" alt="撮影画像">
 
-<img id="preview" alt="撮影した写真が表示されます" style="display:none;">
-<br>
-<button id="shareBtn" style="display:none;">📤 共有</button>
+<div class="controls">
+  <button id="captureBtn" class="shutter"></button>
+  <button id="shareBtn" class="share" style="display:none;">📤</button>
+</div>
 
 <script>
 const video = document.getElementById('camera');
@@ -43,9 +119,17 @@ const preview = document.getElementById('preview');
 const captureBtn = document.getElementById('captureBtn');
 const shareBtn = document.getElementById('shareBtn');
 
-let capturedBlob = null;
+// --- OS判別とクラス付与 ---
+const ua = navigator.userAgent.toLowerCase();
+if (/iphone|ipad|ipod/.test(ua)) {
+  document.body.classList.add('ios');
+} else if (/android/.test(ua)) {
+  document.body.classList.add('android');
+} else {
+  // Windowsなどはデフォルト
+}
 
-// カメラ起動
+// --- カメラ起動 ---
 async function initCamera() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -55,7 +139,9 @@ async function initCamera() {
   }
 }
 
-// 撮影
+let capturedBlob = null;
+
+// --- 撮影 ---
 captureBtn.addEventListener('click', () => {
   const canvas = document.createElement('canvas');
   canvas.width = video.videoWidth;
@@ -66,11 +152,12 @@ captureBtn.addEventListener('click', () => {
     capturedBlob = blob;
     preview.src = URL.createObjectURL(blob);
     preview.style.display = 'block';
+    video.style.display = 'none';
     shareBtn.style.display = 'inline-block';
   }, 'image/jpeg');
 });
 
-// 共有（iOSではシェアシートが出る）
+// --- 共有 ---
 shareBtn.addEventListener('click', async () => {
   if (!capturedBlob) return;
 
@@ -86,7 +173,7 @@ shareBtn.addEventListener('click', async () => {
       console.log('共有がキャンセルされました:', err);
     }
   } else {
-    // 共有APIが使えない環境ではダウンロードに切り替え
+    // 共有APIが使えない場合はダウンロード
     const a = document.createElement('a');
     a.href = URL.createObjectURL(capturedBlob);
     a.download = 'photo.jpg';
