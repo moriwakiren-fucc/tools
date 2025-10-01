@@ -1,321 +1,101 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>クロスプラットフォーム カメラサイト</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  :root{--ui-bg:#0f1724;--card:#0b1220;--accent:#06b6d4;--text:#e6eef6}
-  *{box-sizing:border-box}
-  html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP",sans-serif;background:linear-gradient(180deg,#071029 0%,#071a2a 100%);color:var(--text)}
-  .app{max-width:1100px;margin:0 auto;padding:12px}
-  header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
-  h1{font-size:1.05rem;margin:0}
-  .controls{display:flex;gap:8px;flex-wrap:wrap}
-  .card{background:rgba(255,255,255,0.03);padding:10px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.45)}
-  #viewWrap{display:grid;grid-template-columns:1fr 320px;gap:12px}
-  @media(max-width:880px){#viewWrap{grid-template-columns:1fr;}}
-  video,canvas{width:100%;border-radius:10px;background:#000;display:block}
-  .right{display:flex;flex-direction:column;gap:10px}
-  .actions{display:flex;gap:8px;flex-wrap:wrap}
-  button,select{appearance:none;padding:9px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text);cursor:pointer}
-  input[type=file]{display:none}
-  .thumbs{display:grid;grid-template-columns:repeat(auto-fill,80px);gap:8px;overflow:auto;max-height:320px;padding:6px}
-  .thumbs img{width:100%;height:80px;object-fit:cover;border-radius:6px;border:2px solid rgba(255,255,255,0.03)}
-  .hint{font-size:0.85rem;color:#b7c7d6}
-  .muted{font-size:0.82rem;color:#9bb0c2}
-  .full-btn{width:100%;padding:12px;border-radius:10px}
-  .save-options{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  .small{font-size:0.85rem;padding:8px 10px}
+  body {
+    font-family: sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+  }
+  video, img {
+    width: 90%;
+    max-width: 400px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+  }
+  button {
+    display: block;
+    width: 200px;
+    margin: 15px auto;
+    padding: 10px;
+    font-size: 1.1em;
+  }
 </style>
 </head>
 <body>
-<div class="app">
-  <header>
-    <h1>クロスプラットフォーム カメラ</h1>
-    <div class="controls">
-      <div class="card muted" id="status">初期化中…</div>
-      <div class="card">
-        <label for="facing">カメラ</label>
-        <select id="facing" title="カメラ切替">
-          <option value="environment">背面（推奨）</option>
-          <option value="user">前面（自撮り）</option>
-        </select>
-      </div>
-    </div>
-  </header>
 
-  <main id="viewWrap">
-    <section class="card">
-      <video id="video" playsinline autoplay muted></video>
-      <canvas id="canvas" style="display:none;"></canvas>
-      <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
-        <button id="capture" class="full-btn">写真を撮る</button>
-        <button id="uploadFile" class="small">ファイルから選択</button>
-        <input id="fileInput" type="file" accept="image/*" capture="environment">
-      </div>
-      <div style="margin-top:8px" class="hint">※ブラウザにカメラ許可を与えてください。許可できない場合は「ファイルから選択」で写真を選んでください。</div>
-    </section>
+<h1>カメラ撮影</h1>
 
-    <aside class="right">
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <strong>保存オプション</strong>
-          <div class="muted" id="platformInfo"></div>
-        </div>
-        <div style="margin-top:8px" class="save-options">
-          <label><input type="checkbox" id="autoDownload" checked> ダウンロード（端末に保存）</label>
-          <label><input type="checkbox" id="promptSave"> 長押しで保存を案内（iOS向け補助）</label>
-        </div>
-        <div style="margin-top:8px" class="muted">クラウド連携：</div>
-        <div style="margin-top:8px;display:flex;gap:8px">
-          <button id="gdrive" class="small">Google Drive に接続</button>
-          <button id="onedrive" class="small">OneDrive に接続</button>
-        </div>
-        <div style="margin-top:8px" class="muted" id="cloudStatus">未接続</div>
-      </div>
+<video id="camera" autoplay playsinline></video>
+<br>
+<button id="captureBtn">📸 撮影</button>
 
-      <div class="card">
-        <strong>撮影済み（ローカルプレビュー）</strong>
-        <div class="thumbs" id="thumbs"></div>
-        <div style="margin-top:8px" class="actions">
-          <button id="clear" class="small">クリア</button>
-          <button id="downloadAll" class="small">全部ダウンロード</button>
-        </div>
-      </div>
-
-      <div class="card muted">
-        <div><strong>互換性ノート</strong></div>
-        <ul style="padding-left:18px;margin:6px 0 0 0">
-          <li>iOS Safari: ダウンロード後も「長押しで保存」が必要なケースあり。</li>
-          <li>Android Chrome: ダウンロードで写真アプリに入ることが多い。</li>
-          <li>デスクトップ: 直接ダウンロードが標準動作。</li>
-        </ul>
-      </div>
-    </aside>
-  </main>
-</div>
+<img id="preview" alt="撮影した写真が表示されます" style="display:none;">
+<br>
+<button id="shareBtn" style="display:none;">📤 共有</button>
 
 <script>
-/* ---- 基本要素 ---- */
-const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const captureBtn = document.getElementById('capture');
-const fileInput = document.getElementById('fileInput');
-const uploadFile = document.getElementById('uploadFile');
-const thumbs = document.getElementById('thumbs');
-const status = document.getElementById('status');
-const platformInfo = document.getElementById('platformInfo');
-const autoDownload = document.getElementById('autoDownload');
-const promptSave = document.getElementById('promptSave');
-const facingSelect = document.getElementById('facing');
-const gdriveBtn = document.getElementById('gdrive');
-const onedriveBtn = document.getElementById('onedrive');
-const cloudStatus = document.getElementById('cloudStatus');
-const clearBtn = document.getElementById('clear');
-const downloadAllBtn = document.getElementById('downloadAll');
+const video = document.getElementById('camera');
+const preview = document.getElementById('preview');
+const captureBtn = document.getElementById('captureBtn');
+const shareBtn = document.getElementById('shareBtn');
 
-let currentStream = null;
-let capturedImages = [];
-let cloudProviders = { gdrive: null, onedrive: null };
+let capturedBlob = null;
 
-/* ---- ユーティリティ ---- */
-function isIOS(){ return /iP(hone|od|ad)/.test(navigator.platform) || (navigator.userAgent.includes("Mac") && "ontouchend" in document); }
-function isAndroid(){ return /Android/.test(navigator.userAgent); }
-function updatePlatformInfo(){ platformInfo.textContent = isIOS() ? 'iOS' : isAndroid() ? 'Android' : 'Desktop'; }
+// カメラ起動
+async function initCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    video.srcObject = stream;
+  } catch (err) {
+    alert('カメラを利用できません: ' + err.message);
+  }
+}
 
-/* ---- カメラ開始（getUserMediaを優先、無ければファイル入力へフォールバック） ---- */
-async function startCamera(){ 
-  stopCamera();
-  const facing = facingSelect.value;
-  const constraints = { video: { facingMode: { exact: facing } } };
-  try{
-    status.textContent = 'カメラを起動中…';
-    currentStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: (facing === 'user' ? 'user' : 'environment') }, audio:false });
-    video.srcObject = currentStream;
-    await video.play();
-    status.textContent = 'カメラ起動中';
-  }catch(err){
-    // fallback: allow facingMode loose or file input
-    try{
-      currentStream = await navigator.mediaDevices.getUserMedia({ video: true, audio:false });
-      video.srcObject = currentStream;
-      await video.play();
-      status.textContent = 'カメラ起動（fallback）';
-    }catch(e){
-      status.textContent = 'カメラ未使用（ファイル選択を使ってください）';
-      console.warn('camera failed', e);
+// 撮影
+captureBtn.addEventListener('click', () => {
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+
+  canvas.toBlob(blob => {
+    capturedBlob = blob;
+    preview.src = URL.createObjectURL(blob);
+    preview.style.display = 'block';
+    shareBtn.style.display = 'inline-block';
+  }, 'image/jpeg');
+});
+
+// 共有（iOSではシェアシートが出る）
+shareBtn.addEventListener('click', async () => {
+  if (!capturedBlob) return;
+
+  const file = new File([capturedBlob], 'photo.jpg', { type: 'image/jpeg' });
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        files: [file],
+        text: '撮影した写真を共有します'
+      });
+    } catch (err) {
+      console.log('共有がキャンセルされました:', err);
     }
+  } else {
+    // 共有APIが使えない環境ではダウンロードに切り替え
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(capturedBlob);
+    a.download = 'photo.jpg';
+    a.click();
   }
-}
-
-/* ---- 停止 ---- */
-function stopCamera(){
-  if(currentStream){
-    currentStream.getTracks().forEach(t=>t.stop());
-    currentStream = null;
-  }
-}
-
-/* ---- 撮影（canvasに描画してBlob取得） ---- */
-function takePhoto(){
-  if(!video.videoWidth || !video.videoHeight){
-    alert('カメラ準備中、または画像が選択されていません');
-    return;
-  }
-  const w = video.videoWidth;
-  const h = video.videoHeight;
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0, w, h);
-  canvas.toBlob(async (blob)=>{
-    const file = new File([blob], `photo_${Date.now()}.jpg`, { type:'image/jpeg' });
-    handleCapturedFile(file);
-  }, 'image/jpeg', 0.92);
-}
-
-/* ---- ファイル入力からの処理（フォールバック） ---- */
-uploadFile.addEventListener('click', ()=>fileInput.click());
-fileInput.addEventListener('change', (e)=>{
-  const f = e.target.files[0];
-  if(f) handleCapturedFile(f);
 });
 
-/* ---- 撮影／選択ファイルの統一処理 ---- */
-function handleCapturedFile(file){
-  const url = URL.createObjectURL(file);
-  const img = document.createElement('img');
-  img.src = url;
-  img.alt = file.name;
-  img.loading = 'lazy';
-  const wrap = document.createElement('div');
-  wrap.appendChild(img);
-  thumbs.prepend(wrap);
-  capturedImages.unshift({file, url});
-  status.textContent = `撮影済み: ${capturedImages.length}枚`;
-  if(autoDownload.checked) downloadBlob(file);
-  if(promptSave.checked && isIOS()){
-    alert('画像を長押しして「画像を保存」を選んでください（iOS Safari）');
-  }
-}
-
-/* ---- ダウンロード補助 ---- */
-function downloadBlob(file){
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(file);
-  a.download = file.name;
-  // Chrome / Android では即ダウンロードが始まる
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(()=>URL.revokeObjectURL(a.href), 10000);
-}
-
-/* ---- 全部ダウンロード ---- */
-downloadAllBtn.addEventListener('click', ()=>{
-  capturedImages.forEach((it, idx) => {
-    // 少し遅延を入れてブラウザ負荷軽減
-    setTimeout(()=>downloadBlob(it.file), idx*300);
-  });
-});
-
-/* ---- クリア ---- */
-clearBtn.addEventListener('click', ()=>{
-  thumbs.innerHTML = '';
-  capturedImages = [];
-  status.textContent = 'クリアしました';
-});
-
-/* ---- イベント ---- */
-captureBtn.addEventListener('click', takePhoto);
-facingSelect.addEventListener('change', startCamera);
-window.addEventListener('beforeunload', stopCamera);
-
-/* ---- 初期化 ---- */
-updatePlatformInfo();
-if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
-  startCamera();
-}else{
-  status.textContent = 'カメラAPI非対応：ファイル入力を使用してください';
-}
-
-/* ---- シンプルなクラウド連携の雛形（OAuth + upload） ---
-   注意：実運用ではクライアントID設定、PKCE、リダイレクトURI、トークン保護が必要です。
-   ここでは「接続」→「トークン保存（メモリ）」→「アップロード関数」を示す。
-*/
-function openPopup(url, name, w=600, h=600){
-  const left = (screen.width/2)-(w/2);
-  const top = (screen.height/2)-(h/2);
-  return window.open(url, name, `width=${w},height=${h},left=${left},top=${top}`);
-}
-
-/* ---- Google Drive: PKCE + OAuth2（雛形） ----
-   - 実運用: Google Cloud Console で OAuth クライアントを登録し client_id を用意
-   - scopes: 'https://www.googleapis.com/auth/drive.file' など
-*/
-const GCLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID';
-const GD_SCOPES = 'https://www.googleapis.com/auth/drive.file';
-
-async function gdriveAuth(){
-  if(!GCLIENT_ID){ alert('Google Client ID を設定してください（コード内）'); return; }
-  // PKCE の実装はここでは簡略化。実運用では必ず PKCE を用いること。
-  const redirect = location.origin + location.pathname;
-  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(GCLIENT_ID)}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=${encodeURIComponent(GD_SCOPES)}&prompt=consent`;
-  const popup = openPopup(authUrl,'gdrive_auth',600,700);
-  // 簡易：ポップアップでアクセストークン取得後、ユーザーがURLをコピーして貼るように案内するか、
-  // リダイレクト先で親ウィンドウにメッセージ送る仕組みが必要。ここでは簡易案内のみ。
-  alert('ポップアップで認可後、URLに含まれるaccess_tokenを取得してここに貼り付けるUIを追加してください（実運用では自動受け渡しを実装）');
-  cloudStatus.textContent = 'Google: 認可待ち（要実装）';
-}
-
-async function gdriveUploadFile(file, accessToken){
-  // upload multipart 問い合わせの例
-  const metadata = { name: file.name };
-  const form = new FormData();
-  form.append('metadata', new Blob([JSON.stringify(metadata)], {type:'application/json'}));
-  form.append('file', file);
-  const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-    method:'POST',
-    headers: { Authorization: 'Bearer ' + accessToken },
-    body: form
-  });
-  return res.json();
-}
-
-/* ---- OneDrive: OAuth + upload 雛形 ----
-   - Microsoft アプリ登録で client_id を取得しておく
-   - scope: Files.ReadWrite.AppFolder / Files.ReadWrite
-*/
-const ONE_CLIENT_ID = 'YOUR_ONEDRIVE_CLIENT_ID';
-const OD_SCOPES = 'Files.ReadWrite.AppFolder offline_access';
-
-async function onedriveAuth(){
-  if(!ONE_CLIENT_ID){ alert('OneDrive Client ID を設定してください（コード内）'); return; }
-  const redirect = location.origin + location.pathname;
-  const url = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${encodeURIComponent(ONE_CLIENT_ID)}&response_type=token&redirect_uri=${encodeURIComponent(redirect)}&scope=${encodeURIComponent(OD_SCOPES)}`;
-  openPopup(url,'od_auth',600,700);
-  alert('OneDrive 認可後、アクセストークンを取得してここに貼るUIを実装してください（実運用では自動処理を実装）');
-  cloudStatus.textContent = 'OneDrive: 認可待ち（要実装）';
-}
-
-async function onedriveUploadFile(file, accessToken){
-  // Simple upload to app root (Note: path /drive/root:/path:/content)
-  const path = `/drive/root:/Apps/YourApp/${file.name}:/content`;
-  const res = await fetch('https://graph.microsoft.com/v1.0' + path, {
-    method: 'PUT',
-    headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': file.type },
-    body: file
-  });
-  return res.json();
-}
-
-/* ---- イベント: クラウドボタン ---- */
-gdriveBtn.addEventListener('click', gdriveAuth);
-onedriveBtn.addEventListener('click', onedriveAuth);
-
-/* ---- 注意（最後に） ---- */
-console.log('Camera app initialized. Note: For full cloud integration implement PKCE and secure token exchange server-side.');
+initCamera();
 </script>
+
 </body>
 </html>
