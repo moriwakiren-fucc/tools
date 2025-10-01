@@ -5,101 +5,95 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-  body {
+  /* ページ全体をフルスクリーンに */
+  html, body {
     margin: 0;
-    height: 100vh;
+    padding: 0;
+    height: 100%;
+    overflow: hidden; /* スクロール無効 */
     background: black;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
     font-family: sans-serif;
   }
 
-  video, img {
+  /* カメラとプレビュー共通（全画面表示） */
+  video, img#preview {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    height: auto;
+    height: 100%;
+    object-fit: cover; /* 画面いっぱいに表示 */
     background: black;
-    flex: 1;
-    object-fit: contain;
-  }
-
-  /* ボタン共通 */
-  .controls {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: rgba(0,0,0,0.5);
-    padding: 15px 0;
-  }
-
-  button {
-    background: none;
-    border: none;
-    cursor: pointer;
-  }
-
-  /* --- デフォルト（Windows向け） --- */
-  .shutter {
-    width: 70px;
-    height: 70px;
-    border: 4px solid white;
-    border-radius: 50%;
-    background: #ddd;
-    box-shadow: 0 0 8px #555;
-  }
-
-  .share {
-    margin-left: 30px;
-    font-size: 1.4em;
-    color: white;
-    background: rgba(255,255,255,0.2);
-    padding: 8px 16px;
-    border-radius: 8px;
-  }
-
-  /* --- iOS風 --- */
-  .ios .shutter {
-    width: 80px;
-    height: 80px;
-    border: 4px solid white;
-    border-radius: 50%;
-    background: white;
-    box-shadow: 0 0 8px #444;
-  }
-
-  .ios .share {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: rgba(255,255,255,0.3);
-    padding: 10px 14px;
-    border-radius: 8px;
-    font-size: 1.2em;
-  }
-
-  /* --- Android風 --- */
-  .android .shutter {
-    width: 85px;
-    height: 85px;
-    border: 4px solid #fff;
-    border-radius: 50%;
-    background: #eee;
-    box-shadow: 0 0 8px #000;
-  }
-
-  .android .share {
-    position: absolute;
-    bottom: 100px;
-    right: 20px;
-    background: rgba(255,255,255,0.25);
-    padding: 12px;
-    border-radius: 50%;
-    font-size: 1.5em;
-    color: white;
   }
 
   img#preview {
     display: none;
+    z-index: 2; /* 撮影後はプレビューが上に */
+  }
+
+  /* コントロールボタンを下に重ねる */
+  .controls {
+    position: absolute;
+    bottom: 40px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 60px;
+    z-index: 3; /* プレビューより上に */
+  }
+
+  /* カメラ切替ボタン（左下寄り） */
+  #switchCam {
+    position: absolute;
+    bottom: 120px;
+    left: 20px;
+    font-size: 1.6em;
+    color: white;
+    background: rgba(0,0,0,0.3);
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: none;
+    z-index: 3;
+  }
+
+  /* 共通のボタンスタイル */
+  button {
+    border: none;
+    cursor: pointer;
+  }
+
+  /* シャッターボタン（デフォルトPC風） */
+  .shutter {
+    width: 80px;
+    height: 80px;
+    border: 4px solid white;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.8);
+    box-shadow: 0 0 10px rgba(0,0,0,0.6);
+  }
+
+  /* 共有ボタン */
+  .share {
+    font-size: 1.6em;
+    color: white;
+    background: rgba(0,0,0,0.3);
+    padding: 12px 16px;
+    border-radius: 12px;
+    display: none;
+  }
+
+  /* --- iOS風 --- */
+  .ios .shutter {
+    background: white;
+    border: 5px solid rgba(255,255,255,0.8);
+  }
+
+  /* --- Android風 --- */
+  .android .shutter {
+    background: #eee;
+    border: 5px solid #fff;
   }
 </style>
 </head>
@@ -108,9 +102,13 @@
 <video id="camera" autoplay playsinline></video>
 <img id="preview" alt="撮影画像">
 
+<!-- カメラ切替ボタン -->
+<button id="switchCam">🔄</button>
+
+<!-- 撮影・共有ボタン -->
 <div class="controls">
   <button id="captureBtn" class="shutter"></button>
-  <button id="shareBtn" class="share" style="display:none;">📤</button>
+  <button id="shareBtn" class="share">📤</button>
 </div>
 
 <script>
@@ -118,6 +116,10 @@ const video = document.getElementById('camera');
 const preview = document.getElementById('preview');
 const captureBtn = document.getElementById('captureBtn');
 const shareBtn = document.getElementById('shareBtn');
+const switchCamBtn = document.getElementById('switchCam');
+
+let capturedBlob = null;
+let currentFacingMode = 'environment'; // デフォルトは外カメラ
 
 // --- OS判別とクラス付与 ---
 const ua = navigator.userAgent.toLowerCase();
@@ -125,21 +127,30 @@ if (/iphone|ipad|ipod/.test(ua)) {
   document.body.classList.add('ios');
 } else if (/android/.test(ua)) {
   document.body.classList.add('android');
-} else {
-  // Windowsなどはデフォルト
-}
+} // PCはデフォルト
 
 // --- カメラ起動 ---
-async function initCamera() {
+async function initCamera(facingMode = 'environment') {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: facingMode }
+    });
     video.srcObject = stream;
+    video.style.display = 'block';
+    preview.style.display = 'none';
+    shareBtn.style.display = 'none';
   } catch (err) {
     alert('カメラを利用できません: ' + err.message);
   }
 }
 
-let capturedBlob = null;
+initCamera(currentFacingMode);
+
+// --- カメラ切替 ---
+switchCamBtn.addEventListener('click', () => {
+  currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+  initCamera(currentFacingMode);
+});
 
 // --- 撮影 ---
 captureBtn.addEventListener('click', () => {
@@ -152,15 +163,14 @@ captureBtn.addEventListener('click', () => {
     capturedBlob = blob;
     preview.src = URL.createObjectURL(blob);
     preview.style.display = 'block';
-    video.style.display = 'none';
     shareBtn.style.display = 'inline-block';
+    video.style.display = 'none';
   }, 'image/jpeg');
 });
 
 // --- 共有 ---
 shareBtn.addEventListener('click', async () => {
   if (!capturedBlob) return;
-
   const file = new File([capturedBlob], 'photo.jpg', { type: 'image/jpeg' });
 
   if (navigator.share) {
@@ -173,16 +183,14 @@ shareBtn.addEventListener('click', async () => {
       console.log('共有がキャンセルされました:', err);
     }
   } else {
-    // 共有APIが使えない場合はダウンロード
     const a = document.createElement('a');
     a.href = URL.createObjectURL(capturedBlob);
     a.download = 'photo.jpg';
     a.click();
   }
 });
-
-initCamera();
 </script>
 
 </body>
 </html>
+
