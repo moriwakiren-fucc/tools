@@ -6,50 +6,52 @@
 
 <style>
 html, body {
-  margin: 0; height: 100%; overflow: hidden; background: black;
+  margin: 0; height: 100%; overflow: hidden; background: black; font-family: sans-serif;
 }
 
 video, img#preview {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  object-fit: cover;
-  background: black;
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  object-fit: cover; background: black;
 }
 
 img#preview { display: none; z-index: 2; }
 
 .controls {
-  position: absolute;
-  bottom: 40px;
-  left: 0; width: 100%;
+  position: absolute; bottom: 40px; left: 0; width: 100%;
   display: flex; justify-content: center; align-items: center;
-  gap: 40px;
-  z-index: 3;
+  gap: 40px; z-index: 3;
 }
 
 #switchCam {
-  position: absolute;
-  bottom: 120px; left: 20px;
+  position: absolute; bottom: 120px; left: 20px;
   font-size: 1.4em; color: white;
   background: rgba(0,0,0,0.3); padding: 8px 12px;
   border-radius: 8px; border: none; z-index: 3;
 }
 
 #zoomSlider {
-  position: absolute;
-  bottom: 200px; left: 50%;
-  transform: translateX(-50%);
-  width: 200px;
-  z-index: 3;
+  position: absolute; bottom: 200px; left: 50%; transform: translateX(-50%);
+  width: 200px; z-index: 3;
 }
 
-#aspectBtn {
-  position: absolute;
-  top: 20px; right: 20px;
+#zoomValue {
+  position: absolute; bottom: 230px; left: 50%; transform: translateX(-50%);
+  color: white; z-index: 3;
+}
+
+#galleryBtn {
+  position: absolute; bottom: 40px; left: 20px;
   background: rgba(0,0,0,0.3); color: white;
-  padding: 8px 12px; border-radius: 8px; border: none;
-  z-index: 3;
+  padding: 10px 14px; border-radius: 8px; border: none; z-index: 3;
+}
+
+.galleryOverlay {
+  position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9);
+  display: none; flex-wrap: wrap; overflow-y: auto; z-index: 10; justify-content: center; padding: 20px;
+}
+
+.galleryOverlay img {
+  max-width: 45%; margin: 10px; border: 2px solid white; border-radius: 8px; cursor: pointer;
 }
 
 .shutter {
@@ -59,13 +61,8 @@ img#preview { display: none; z-index: 2; }
 }
 
 .focus-ring {
-  position: absolute;
-  border: 2px solid yellow;
-  border-radius: 50%;
-  width: 80px; height: 80px;
-  pointer-events: none;
-  display: none;
-  z-index: 4;
+  position: absolute; border: 2px solid yellow; border-radius: 50%;
+  width: 80px; height: 80px; pointer-events: none; display: none; z-index: 4;
 }
 </style>
 </head>
@@ -76,7 +73,8 @@ img#preview { display: none; z-index: 2; }
 
 <button id="switchCam">🔄</button>
 <input type="range" id="zoomSlider" min="1" max="5" step="0.1" value="1">
-<button id="aspectBtn">フル</button>
+<div id="zoomValue">1x</div>
+<button id="galleryBtn">🖼️</button>
 
 <div class="controls">
   <button id="captureBtn" class="shutter"></button>
@@ -84,40 +82,38 @@ img#preview { display: none; z-index: 2; }
 
 <div id="focusRing" class="focus-ring"></div>
 
+<div id="galleryOverlay" class="galleryOverlay"></div>
+
 <script>
 const video = document.getElementById('camera');
 const preview = document.getElementById('preview');
 const captureBtn = document.getElementById('captureBtn');
 const switchCamBtn = document.getElementById('switchCam');
 const zoomSlider = document.getElementById('zoomSlider');
-const aspectBtn = document.getElementById('aspectBtn');
+const zoomValue = document.getElementById('zoomValue');
+const galleryBtn = document.getElementById('galleryBtn');
+const galleryOverlay = document.getElementById('galleryOverlay');
 const focusRing = document.getElementById('focusRing');
 
 let currentFacingMode = 'environment';
 let stream = null;
 let track = null;
-let currentAspect = 'fill'; // 'fill', '4:3', '1:1'
+let photos = [];
+let startPinchDist = null;
+let startZoom = 1;
 
 // --- カメラ初期化 ---
 async function initCamera(facingMode = 'environment') {
-  if (stream) {
-    stream.getTracks().forEach(t => t.stop());
-  }
-
+  if (stream) stream.getTracks().forEach(t=>t.stop());
   try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: facingMode }
-    });
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
     video.srcObject = stream;
-
     track = stream.getVideoTracks()[0];
     setupZoomSlider();
-  } catch(err) {
-    alert('カメラを利用できません: ' + err.message);
-  }
+  } catch(err) { alert('カメラを利用できません: '+err.message); }
 }
 
-// --- ズーム対応確認 ---
+// --- ズーム対応 ---
 function setupZoomSlider() {
   const caps = track.getCapabilities();
   if (caps.zoom) {
@@ -126,42 +122,50 @@ function setupZoomSlider() {
     zoomSlider.step = caps.zoom.step || 0.1;
     zoomSlider.value = track.getSettings().zoom || caps.zoom.min;
     zoomSlider.style.display = 'block';
+    zoomValue.textContent = zoomSlider.value+'x';
   } else {
     zoomSlider.style.display = 'none';
+    zoomValue.style.display = 'none';
   }
 }
 
-// --- ズーム変更 ---
+// --- ズーム変更（スライダーリアルタイム） ---
 zoomSlider.addEventListener('input', async () => {
-  try {
-    await track.applyConstraints({ advanced: [{ zoom: parseFloat(zoomSlider.value) }] });
-  } catch(e) {
-    console.log('ズーム変更失敗', e);
+  const z = parseFloat(zoomSlider.value);
+  zoomValue.textContent = z.toFixed(1)+'x';
+  if (track) {
+    try { await track.applyConstraints({ advanced:[{zoom:z}] }); } catch(e){console.log(e);}
   }
 });
 
-// --- アスペクト比切替 ---
-aspectBtn.addEventListener('click', () => {
-  if (currentAspect === 'fill') {
-    video.style.objectFit = 'contain';
-    video.style.aspectRatio = '4 / 3';
-    currentAspect = '4:3';
-    aspectBtn.textContent = '4:3';
-  } else if (currentAspect === '4:3') {
-    video.style.aspectRatio = '1 / 1';
-    currentAspect = '1:1';
-    aspectBtn.textContent = '1:1';
-  } else {
-    video.style.objectFit = 'cover';
-    video.style.aspectRatio = 'auto';
-    currentAspect = 'fill';
-    aspectBtn.textContent = 'フル';
+// --- ピンチズーム ---
+video.addEventListener('touchstart', e => {
+  if (e.touches.length === 2) {
+    startPinchDist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+    startZoom = parseFloat(zoomSlider.value);
   }
 });
+video.addEventListener('touchmove', async e => {
+  if (e.touches.length === 2 && startPinchDist && track) {
+    const newDist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+    let scale = newDist/startPinchDist;
+    let z = Math.min(Math.max(startZoom*scale, zoomSlider.min), zoomSlider.max);
+    zoomSlider.value = z.toFixed(2);
+    zoomValue.textContent = z.toFixed(1)+'x';
+    try { await track.applyConstraints({ advanced:[{zoom:z}] }); } catch(e){console.log(e);}
+  }
+});
+video.addEventListener('touchend', e => { if (e.touches.length<2) startPinchDist=null; });
 
 // --- カメラ切替 ---
 switchCamBtn.addEventListener('click', () => {
-  currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+  currentFacingMode = currentFacingMode==='environment'?'user':'environment';
   initCamera(currentFacingMode);
 });
 
@@ -170,61 +174,42 @@ initCamera(currentFacingMode);
 // --- 撮影 ---
 captureBtn.addEventListener('click', () => {
   const canvas = document.createElement('canvas');
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  canvas.getContext('2d').drawImage(video, 0, 0);
-
-  canvas.toBlob(blob => {
+  canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video,0,0);
+  canvas.toBlob(blob=>{
+    photos.push(blob); // メモリに保存
     preview.src = URL.createObjectURL(blob);
     preview.style.display = 'block';
     video.style.display = 'none';
-
-    // 0.5秒後に戻す
-    setTimeout(() => {
-      preview.style.display = 'none';
-      video.style.display = 'block';
-    }, 500);
+    setTimeout(()=>{ preview.style.display='none'; video.style.display='block'; }, 500);
   }, 'image/jpeg');
 });
 
-// --- タップでフォーカス＆露出 ---
-video.addEventListener('click', async (e) => {
-  if (!track) return;
-
-  const rect = video.getBoundingClientRect();
-  const x = (e.clientX - rect.left) / rect.width;
-  const y = (e.clientY - rect.top) / rect.height;
-
-  // フォーカスリング表示
-  focusRing.style.left = `${e.clientX - 40}px`;
-  focusRing.style.top = `${e.clientY - 40}px`;
-  focusRing.style.display = 'block';
-  setTimeout(() => focusRing.style.display = 'none', 800);
-
-  const caps = track.getCapabilities();
-  const constraints = {};
-
-  if (caps.focusMode && caps.focusMode.includes('single-shot')) {
-    constraints.advanced = [{ focusMode: 'single-shot' }];
-  }
-
-  if (caps.exposureMode && caps.exposureMode.includes('continuous')) {
-    if (!constraints.advanced) constraints.advanced = [];
-    constraints.advanced.push({ exposureMode: 'continuous' });
-  }
-
-  if (caps.pointsOfInterest) {
-    if (!constraints.advanced) constraints.advanced = [];
-    constraints.advanced.push({ pointsOfInterest: [{ x, y }] });
-  }
-
-  try {
-    await track.applyConstraints(constraints);
-  } catch(err) {
-    console.log('フォーカス制御に失敗', err);
-  }
+// --- ギャラリーボタン ---
+galleryBtn.addEventListener('click', () => {
+  galleryOverlay.innerHTML = '';
+  photos.forEach((blob,i)=>{
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(blob);
+    img.title = 'タップで保存';
+    img.addEventListener('click', ()=>{
+      const a = document.createElement('a');
+      a.href = img.src; a.download = 'photo_'+i+'.jpg'; a.click();
+    });
+    galleryOverlay.appendChild(img);
+  });
+  galleryOverlay.style.display = 'flex';
 });
-</script>
 
-</body>
-</html>
+// --- ギャラリー閉じる（背景クリックで） ---
+galleryOverlay.addEventListener('click', e => {
+  if(e.target===galleryOverlay) galleryOverlay.style.display='none';
+});
+
+// --- タップでフォーカス ---
+video.addEventListener('click', async e => {
+  if (!track) return;
+  const rect = video.getBoundingClientRect();
+  const x = (e.clientX-rect.left)/rect.width;
+  const y = (e.clientY-rect.top)/rect.height;
+  focusRing.style.left
