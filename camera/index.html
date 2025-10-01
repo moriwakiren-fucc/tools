@@ -163,6 +163,25 @@ video.addEventListener('touchmove', async e => {
 });
 video.addEventListener('touchend', e => { if (e.touches.length<2) startPinchDist=null; });
 
+// --- アスペクト比切替 ---
+aspectBtn.addEventListener('click', () => {
+  if (currentAspect === 'fill') {
+    video.style.objectFit = 'contain';
+    video.style.aspectRatio = '4 / 3';
+    currentAspect = '4:3';
+    aspectBtn.textContent = '4:3';
+  } else if (currentAspect === '4:3') {
+    video.style.aspectRatio = '1 / 1';
+    currentAspect = '1:1';
+    aspectBtn.textContent = '1:1';
+  } else {
+    video.style.objectFit = 'cover';
+    video.style.aspectRatio = 'auto';
+    currentAspect = 'fill';
+    aspectBtn.textContent = 'フル';
+  }
+});
+
 // --- カメラ切替 ---
 switchCamBtn.addEventListener('click', () => {
   currentFacingMode = currentFacingMode==='environment'?'user':'environment';
@@ -205,11 +224,45 @@ galleryBtn.addEventListener('click', () => {
 galleryOverlay.addEventListener('click', e => {
   if(e.target===galleryOverlay) galleryOverlay.style.display='none';
 });
-
-// --- タップでフォーカス ---
-video.addEventListener('click', async e => {
+  
+// --- タップでフォーカス＆露出 ---
+video.addEventListener('click', async (e) => {
   if (!track) return;
+
   const rect = video.getBoundingClientRect();
-  const x = (e.clientX-rect.left)/rect.width;
-  const y = (e.clientY-rect.top)/rect.height;
-  focusRing.style.left
+  const x = (e.clientX - rect.left) / rect.width;
+  const y = (e.clientY - rect.top) / rect.height;
+
+  // フォーカスリング表示
+  focusRing.style.left = `${e.clientX - 40}px`;
+  focusRing.style.top = `${e.clientY - 40}px`;
+  focusRing.style.display = 'block';
+  setTimeout(() => focusRing.style.display = 'none', 800);
+
+  const caps = track.getCapabilities();
+  const constraints = {};
+
+  if (caps.focusMode && caps.focusMode.includes('single-shot')) {
+    constraints.advanced = [{ focusMode: 'single-shot' }];
+  }
+
+  if (caps.exposureMode && caps.exposureMode.includes('continuous')) {
+    if (!constraints.advanced) constraints.advanced = [];
+    constraints.advanced.push({ exposureMode: 'continuous' });
+  }
+
+  if (caps.pointsOfInterest) {
+    if (!constraints.advanced) constraints.advanced = [];
+    constraints.advanced.push({ pointsOfInterest: [{ x, y }] });
+  }
+
+  try {
+    await track.applyConstraints(constraints);
+  } catch(err) {
+    console.log('フォーカス制御に失敗', err);
+  }
+});
+</script>
+
+</body>
+</html>
