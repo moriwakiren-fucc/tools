@@ -5,33 +5,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-  /* ページ全体をフルスクリーンに */
   html, body {
     margin: 0;
     padding: 0;
     height: 100%;
-    overflow: hidden; /* スクロール無効 */
+    overflow: hidden;
     background: black;
     font-family: sans-serif;
   }
 
-  /* カメラとプレビュー共通（全画面表示） */
   video, img#preview {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover; /* 画面いっぱいに表示 */
+    object-fit: cover;
     background: black;
   }
 
   img#preview {
     display: none;
-    z-index: 2; /* 撮影後はプレビューが上に */
+    z-index: 2;
   }
 
-  /* コントロールボタンを下に重ねる */
   .controls {
     position: absolute;
     bottom: 40px;
@@ -41,10 +38,9 @@
     justify-content: center;
     align-items: center;
     gap: 60px;
-    z-index: 3; /* プレビューより上に */
+    z-index: 3;
   }
 
-  /* カメラ切替ボタン（左下寄り） */
   #switchCam {
     position: absolute;
     bottom: 120px;
@@ -58,13 +54,11 @@
     z-index: 3;
   }
 
-  /* 共通のボタンスタイル */
   button {
     border: none;
     cursor: pointer;
   }
 
-  /* シャッターボタン（デフォルトPC風） */
   .shutter {
     width: 80px;
     height: 80px;
@@ -74,7 +68,6 @@
     box-shadow: 0 0 10px rgba(0,0,0,0.6);
   }
 
-  /* 共有ボタン */
   .share {
     font-size: 1.6em;
     color: white;
@@ -84,13 +77,11 @@
     display: none;
   }
 
-  /* --- iOS風 --- */
   .ios .shutter {
     background: white;
     border: 5px solid rgba(255,255,255,0.8);
   }
 
-  /* --- Android風 --- */
   .android .shutter {
     background: #eee;
     border: 5px solid #fff;
@@ -102,10 +93,8 @@
 <video id="camera" autoplay playsinline></video>
 <img id="preview" alt="撮影画像">
 
-<!-- カメラ切替ボタン -->
 <button id="switchCam">🔄</button>
 
-<!-- 撮影・共有ボタン -->
 <div class="controls">
   <button id="captureBtn" class="shutter"></button>
   <button id="shareBtn" class="share">📤</button>
@@ -119,15 +108,15 @@ const shareBtn = document.getElementById('shareBtn');
 const switchCamBtn = document.getElementById('switchCam');
 
 let capturedBlob = null;
-let currentFacingMode = 'environment'; // デフォルトは外カメラ
+let currentFacingMode = 'environment';
 
-// --- OS判別とクラス付与 ---
+// --- OS判別 ---
 const ua = navigator.userAgent.toLowerCase();
 if (/iphone|ipad|ipod/.test(ua)) {
   document.body.classList.add('ios');
 } else if (/android/.test(ua)) {
   document.body.classList.add('android');
-} // PCはデフォルト
+}
 
 // --- カメラ起動 ---
 async function initCamera(facingMode = 'environment') {
@@ -163,8 +152,15 @@ captureBtn.addEventListener('click', () => {
     capturedBlob = blob;
     preview.src = URL.createObjectURL(blob);
     preview.style.display = 'block';
-    shareBtn.style.display = 'inline-block';
     video.style.display = 'none';
+
+    // ✅ 0.5秒後にカメラに戻る
+    setTimeout(() => {
+      preview.style.display = 'none';
+      video.style.display = 'block';
+      // 共有ボタンは必要なら手動で表示
+      // shareBtn.style.display = 'inline-block';
+    }, 500);
   }, 'image/jpeg');
 });
 
@@ -193,4 +189,3 @@ shareBtn.addEventListener('click', async () => {
 
 </body>
 </html>
-
