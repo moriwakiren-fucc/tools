@@ -13,7 +13,10 @@ video, img#preview {
   object-fit: cover; background: black;
 }
 img#preview { display: none; z-index: 2; }
-.controls { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; justify-content: center; gap: 40px; z-index: 10; }
+.controls {
+  position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 20px; z-index: 10;
+}
 #switchCam { position: absolute; bottom: 120px; left: 20px; font-size: 1.4em; color: white; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px; border: none; z-index: 10; }
 #zoomSlider { position: absolute; bottom: 200px; left: 50%; transform: translateX(-50%); width: 200px; z-index: 10; }
 #zoomValue { position: absolute; bottom: 230px; left: 50%; transform: translateX(-50%); color: white; z-index: 10; }
@@ -25,9 +28,14 @@ img#preview { display: none; z-index: 2; }
 .galleryImages { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; width:100%; }
 .galleryItem { position:relative; z-index:1001; pointer-events:auto; }
 .galleryItem img { max-width:45%; border:2px solid white; border-radius:8px; display:block; }
-.shareBtn { position:absolute; top:5px; right:5px; background: rgba(0,0,0,0.5); color:white; padding:4px 6px; border-radius:4px; font-size:0.9em; cursor:pointer; pointer-events:auto; z-index:1002; }
 .shutter { width:80px; height:80px; border:4px solid white; border-radius:50%; background: rgba(255,255,255,0.8); }
 .focus-ring { position:absolute; border:2px solid yellow; border-radius:50%; width:80px; height:80px; pointer-events:none; display:none; z-index:12; }
+#actionButtons {
+  position: absolute; top: 20px; left: 20px; display:flex; flex-direction:column; gap:10px; z-index:15;
+}
+#actionButtons button {
+  padding: 8px 12px; border-radius: 6px; border:none; background: rgba(255,255,255,0.2); color:white; font-size:1em; cursor:pointer;
+}
 </style>
 </head>
 <body>
@@ -47,9 +55,15 @@ img#preview { display: none; z-index: 2; }
 
 <div id="focusRing" class="focus-ring"></div>
 
+<div id="actionButtons">
+  <button id="shareBtn">共有</button>
+  <button id="downloadBtn">ダウンロード</button>
+  <button id="googleDriveBtn">Google Drive</button>
+  <button id="oneDriveBtn">OneDrive</button>
+</div>
+
 <div id="galleryOverlay" class="galleryOverlay">
   <div class="galleryHeader">
-    <button id="shareAllBtn">まとめて共有</button>
     <button id="closeGalleryBtn">閉じる</button>
   </div>
   <div class="galleryImages" id="galleryImages"></div>
@@ -67,10 +81,15 @@ const aspectBtn=document.getElementById('aspectBtn');
 const galleryOverlay=document.getElementById('galleryOverlay');
 const galleryImages=document.getElementById('galleryImages');
 const closeGalleryBtn=document.getElementById('closeGalleryBtn');
-const shareAllBtn=document.getElementById('shareAllBtn');
 const focusRing=document.getElementById('focusRing');
 
+const shareBtn=document.getElementById('shareBtn');
+const downloadBtn=document.getElementById('downloadBtn');
+const googleDriveBtn=document.getElementById('googleDriveBtn');
+const oneDriveBtn=document.getElementById('oneDriveBtn');
+
 let currentFacingMode='environment', stream=null, track=null, photos=[], startPinchDist=null, startZoom=1, currentAspect='fill';
+let lastPhotoBlob=null;
 
 // --- カメラ初期化 ---
 async function initCamera(facingMode='environment'){
@@ -94,7 +113,7 @@ function setupZoomSlider(){
 }
 zoomSlider.addEventListener('input', async ()=>{
   const z=parseFloat(zoomSlider.value); zoomValue.textContent=z.toFixed(1)+'x';
-  if(track) try{ await track.applyConstraints({advanced:[{zoom:z}]}); }catch(e){console.log(e);}
+  if(track) try{ await track.applyConstraints({advanced:[{zoom:z}]});}catch(e){console.log(e);}
 });
 
 // --- ピンチズーム ---
@@ -132,6 +151,7 @@ captureBtn.addEventListener('click', ()=>{
   canvas.getContext('2d').drawImage(video,0,0);
   canvas.toBlob(blob=>{
     photos.push(blob);
+    lastPhotoBlob = blob;
     preview.src=URL.createObjectURL(blob); preview.style.display='block'; video.style.display='none';
     setTimeout(()=>{ preview.style.display='none'; video.style.display='block'; },500);
   }, 'image/jpeg');
@@ -143,35 +163,41 @@ galleryBtn.addEventListener('click', ()=>{
   photos.forEach((blob,i)=>{
     const item=document.createElement('div'); item.className='galleryItem'; item.style.position='relative';
     const img=document.createElement('img'); img.src=URL.createObjectURL(blob); item.appendChild(img);
-
-    // シングルクリック／タップで共有、ダブルクリック／タップでダウンロード
-    let lastTap=0;
-    item.addEventListener('click', async e=>{
-      const now=Date.now();
-      if(now-lastTap<300){ // ダブルタップ
-        const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`photo_${i}.jpg`; a.click();
-      } else { // シングルタップ
-        const file=new File([blob], `photo_${i}.jpg`, {type:'image/jpeg'});
-        if(navigator.canShare && navigator.canShare({files:[file]})){
-          try{ await navigator.share({files:[file], title:'写真共有'}); }catch(err){ console.log(err); }
-        }
-      }
-      lastTap=now;
-    });
-
     galleryImages.appendChild(item);
   });
-
-  // まとめて共有ボタンは共有可能な場合だけ表示
-  if(navigator.canShare && navigator.canShare({files:photos.map((b,i)=>new File([b],`photo_${i}.jpg`,{type:'image/jpeg'}))})){
-    shareAllBtn.style.display='block';
-  } else { shareAllBtn.style.display='none'; }
-
   galleryOverlay.style.display='flex';
 });
 
 // --- ギャラリー閉じる ---
-[closeGalleryBtn,'touchend','pointerdown'].forEach(ev=> closeGalleryBtn.addEventListener(ev, ()=>{ galleryOverlay.style.display='none'; }));
+closeGalleryBtn.addEventListener('click', ()=>{ galleryOverlay.style.display='none'; });
+
+// --- 共有ボタン ---
+shareBtn.addEventListener('click', async ()=>{
+  if(!lastPhotoBlob) return;
+  const file=new File([lastPhotoBlob],'photo.jpg',{type:'image/jpeg'});
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file], title:'写真共有'}); }catch(err){ console.log(err); }
+  } else { alert('共有はサポートされていません'); }
+});
+
+// --- ダウンロードボタン ---
+downloadBtn.addEventListener('click', ()=>{
+  if(!lastPhotoBlob) return;
+  const a=document.createElement('a'); a.href=URL.createObjectURL(lastPhotoBlob); a.download='photo.jpg'; a.click();
+});
+
+// --- Google Drive / OneDrive 送信 ---
+googleDriveBtn.addEventListener('click', ()=>{
+  if(!lastPhotoBlob) return;
+  // 簡易的にGoogle Driveアップロードページを開く
+  window.open('https://drive.google.com/drive/u/0/my-drive','_blank');
+});
+
+oneDriveBtn.addEventListener('click', ()=>{
+  if(!lastPhotoBlob) return;
+  // 簡易的にOneDriveアップロードページを開く
+  window.open('https://onedrive.live.com','_blank');
+});
 
 // --- タップフォーカス ---
 video.addEventListener('click', async e=>{
@@ -185,7 +211,7 @@ video.addEventListener('click', async e=>{
   if(caps.focusMode && caps.focusMode.includes('single-shot')) constraints.advanced=[{focusMode:'single-shot'}];
   if(caps.exposureMode && caps.exposureMode.includes('continuous')){ constraints.advanced=constraints.advanced||[]; constraints.advanced.push({exposureMode:'continuous'}); }
   if(caps.pointsOfInterest){ constraints.advanced=constraints.advanced||[]; constraints.advanced.push({pointsOfInterest:[{x,y}]}); }
-  try{ await track.applyConstraints(constraints); } catch(err){ console.log(err); }
+  try{ await track.applyConstraints(constraints); } catch(err){console.log(err);}
 });
 </script>
 </body>
