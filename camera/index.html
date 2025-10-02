@@ -305,23 +305,37 @@ galleryBtn.addEventListener('click', ()=>{
     shareBtn.textContent='共有';
     shareBtn.className='shareBtn';
 
-    // 共有可能な場合のみ表示
+galleryBtn.addEventListener('click', ()=>{
+  galleryImages.innerHTML='';
+  photos.forEach((blob,i)=>{
+    const item=document.createElement('div');
+    item.className='galleryItem';
+    item.style.position='relative';
+    item.style.pointerEvents='auto';
+
+    // 写真は必ず表示
+    const img=document.createElement('img');
+    img.src=URL.createObjectURL(blob);
+    item.appendChild(img);
+
+    // 共有ボタンは共有可能な場合のみ表示
+    const file = new File([blob], `photo_${i}.jpg`, {type:'image/jpeg'});
     if(navigator.canShare && navigator.canShare({files:[file]})){
-      shareBtn.style.display='block';
+      const shareBtn=document.createElement('button');
+      shareBtn.textContent='共有';
+      shareBtn.className='shareBtn';
       shareBtn.addEventListener('click', async e=>{
         e.stopPropagation();
         try{ await navigator.share({files:[file], title:'写真共有'}); }
         catch(err){ console.log('共有エラー', err); }
       });
-    } else {
-      shareBtn.style.display='none';
+      item.appendChild(shareBtn);
     }
 
-    item.appendChild(shareBtn);
     galleryImages.appendChild(item);
   });
 
-  // まとめて共有ボタンも同じ判定
+  // まとめて共有も同じ判定
   if(navigator.canShare && navigator.canShare({files:photos})){
     shareAllBtn.style.display='block';
     shareAllBtn.onclick=async ()=>{
@@ -334,6 +348,7 @@ galleryBtn.addEventListener('click', ()=>{
 
   galleryOverlay.style.display='flex';
 });
+
 
 // ギャラリー閉じる
 closeGalleryBtn.addEventListener('click', ()=>{ galleryOverlay.style.display='none'; });
