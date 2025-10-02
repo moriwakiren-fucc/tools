@@ -287,39 +287,47 @@ captureBtn.addEventListener('click', ()=>{
   }, 'image/jpeg');
 });
 
-// --- ギャラリー表示 ---
-galleryBtn.addEventListener('click', ()=>{
+// ギャラリー表示
+galleryBtn.addEventListener('click', () => {
   galleryImages.innerHTML = '';
   photos.forEach((blob, i) => {
     const item = document.createElement('div');
     item.className = 'galleryItem';
-    
+    item.style.position = 'relative'; 
+    item.style.pointerEvents = 'auto';
+
     const img = document.createElement('img');
     img.src = URL.createObjectURL(blob);
     item.appendChild(img);
-    
+
     const shareBtn = document.createElement('button');
     shareBtn.textContent = '共有';
     shareBtn.className = 'shareBtn';
-    shareBtn.addEventListener('click', async () => {
-      // Web Share API 対応なら共有、非対応ならダウンロード
-      if(navigator.canShare && navigator.canShare({ files: [blob] })){
-        try{
-          await navigator.share({ files: [blob], title: '写真共有' });
-        }catch(err){ console.log(err); }
+    shareBtn.style.pointerEvents = 'auto';
+    shareBtn.style.zIndex = 1002;
+
+    // click と touchend の両方で反応させる
+    const handler = async () => {
+      if (navigator.canShare && navigator.canShare({ files: [blob] })) {
+        try { await navigator.share({ files: [blob], title: '写真共有' }); } 
+        catch(e){ console.log(e); }
       } else {
-        // ダウンロード fallback
         const a = document.createElement('a');
         a.href = img.src;
-        a.download = 'photo_'+i+'.jpg';
+        a.download = 'photo_' + i + '.jpg';
         a.click();
       }
-    });
-    item.appendChild(shareBtn);
+    };
+    shareBtn.addEventListener('click', handler);
+    shareBtn.addEventListener('touchend', handler);
 
+    item.appendChild(shareBtn);
     galleryImages.appendChild(item);
   });
+
+  // overlay の表示
   galleryOverlay.style.display = 'flex';
+  galleryOverlay.style.pointerEvents = 'auto';
 });
 
 // --- まとめて共有 ---
