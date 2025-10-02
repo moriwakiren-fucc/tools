@@ -51,19 +51,18 @@ img#preview { display:none; z-index:2; }
 
 <script>
 const video=document.getElementById('camera');
-const preview=document.getElementById('preview');
 const captureBtn=document.getElementById('captureBtn');
-const switchCamBtn=document.getElementById('switchCam');
-const zoomSlider=document.getElementById('zoomSlider');
-const zoomValue=document.getElementById('zoomValue');
 const galleryBtn=document.getElementById('galleryBtn');
-const aspectBtn=document.getElementById('aspectBtn');
 const galleryOverlay=document.getElementById('galleryOverlay');
 const galleryImages=document.getElementById('galleryImages');
 const closeGalleryBtn=document.getElementById('closeGalleryBtn');
 const focusRing=document.getElementById('focusRing');
+const zoomSlider=document.getElementById('zoomSlider');
+const zoomValue=document.getElementById('zoomValue');
+const switchCamBtn=document.getElementById('switchCam');
+const aspectBtn=document.getElementById('aspectBtn');
 
-let currentFacingMode='environment', stream=null, track=null, photos=[], startPinchDist=null, startZoom=1, currentAspect='fill';
+let photos=[], stream=null, track=null, currentFacingMode='environment', startPinchDist=null, startZoom=1, currentAspect='fill';
 
 // --- カメラ初期化 ---
 async function initCamera(facingMode='environment'){
@@ -87,26 +86,8 @@ function setupZoomSlider(){
 }
 zoomSlider.addEventListener('input', async ()=>{
   const z=parseFloat(zoomSlider.value); zoomValue.textContent=z.toFixed(1)+'x';
-  if(track) try{ await track.applyConstraints({advanced:[{zoom:z}]});}catch(e){console.log(e);}
+  if(track) try{ await track.applyConstraints({advanced:[{zoom:z}]}); }catch(e){console.log(e);}
 });
-
-// --- ピンチズーム ---
-video.addEventListener('touchstart', e=>{
-  if(e.touches.length===2){ e.preventDefault();
-    startPinchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-    startZoom=parseFloat(zoomSlider.value);
-  }
-});
-video.addEventListener('touchmove', e=>{
-  if(e.touches.length===2 && startPinchDist && track){ e.preventDefault();
-    const newDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-    let scale=newDist/startPinchDist;
-    let z=Math.min(Math.max(startZoom*scale, zoomSlider.min), zoomSlider.max);
-    zoomSlider.value=z.toFixed(2); zoomValue.textContent=z.toFixed(1)+'x';
-    try{ track.applyConstraints({advanced:[{zoom:z}]}); }catch(e){console.log(e);}
-  }
-});
-video.addEventListener('touchend', e=>{ if(e.touches.length<2) startPinchDist=null; });
 
 // --- カメラ切替 ---
 switchCamBtn.addEventListener('click', ()=>{ currentFacingMode=currentFacingMode==='environment'?'user':'environment'; initCamera(currentFacingMode); });
@@ -123,9 +104,7 @@ aspectBtn.addEventListener('click', ()=>{
 captureBtn.addEventListener('click', ()=>{
   const canvas=document.createElement('canvas'); canvas.width=video.videoWidth; canvas.height=video.videoHeight;
   canvas.getContext('2d').drawImage(video,0,0);
-  canvas.toBlob(blob=>{
-    photos.push(blob);
-  }, 'image/jpeg');
+  canvas.toBlob(blob=>{ photos.push(blob); }, 'image/jpeg');
 });
 
 // --- ギャラリー表示 ---
@@ -135,15 +114,14 @@ galleryBtn.addEventListener('click', ()=>{
     const item=document.createElement('div'); item.className='galleryItem';
     const img=document.createElement('img'); img.src=URL.createObjectURL(blob); item.appendChild(img);
 
-    // --- 個別ボタン ---
     const btnContainer=document.createElement('div'); btnContainer.className='photoButtons';
 
     const shareBtn=document.createElement('button'); shareBtn.textContent='共有';
     shareBtn.addEventListener('click', async ()=>{
       const file=new File([blob],`photo_${i}.jpg`,{type:'image/jpeg'});
       if(navigator.canShare && navigator.canShare({files:[file]})){
-        try{ await navigator.share({files:[file], title:'写真共有'}); }catch(err){console.log(err);}
-      } else { alert('共有はサポートされていません'); }
+        try{ await navigator.share({files:[file], title:'写真共有'}); }catch(err){alert('共有不可');}
+      } else { alert('共有不可'); }
     });
 
     const downloadBtn=document.createElement('button'); downloadBtn.textContent='ダウンロード';
@@ -152,44 +130,34 @@ galleryBtn.addEventListener('click', ()=>{
     });
 
     const gDriveBtn=document.createElement('button'); gDriveBtn.textContent='Google Drive';
-    gDriveBtn.addEventListener('click', ()=>{
-      const url=URL.createObjectURL(blob);
-      // Google Driveアップロードページを新規タブで開く
-      window.open('https://drive.google.com/drive/u/0/my-drive','_blank');
+    gDriveBtn.addEventListener('click', async ()=>{
+      // Google Drive APIを使用してアップロード
+      await uploadToGoogleDrive(blob, `photo_${i}.jpg`);
     });
 
     const oneDriveBtn=document.createElement('button'); oneDriveBtn.textContent='OneDrive';
-    oneDriveBtn.addEventListener('click', ()=>{
-      const url=URL.createObjectURL(blob);
-      // OneDriveアップロードページを新規タブで開く
-      window.open('https://onedrive.live.com','_blank');
+    oneDriveBtn.addEventListener('click', async ()=>{
+      await uploadToOneDrive(blob, `photo_${i}.jpg`);
     });
 
     [shareBtn, downloadBtn, gDriveBtn, oneDriveBtn].forEach(b=> btnContainer.appendChild(b));
     item.appendChild(btnContainer);
     galleryImages.appendChild(item);
   });
-
   galleryOverlay.style.display='flex';
 });
 
 // --- ギャラリー閉じる ---
 closeGalleryBtn.addEventListener('click', ()=>{ galleryOverlay.style.display='none'; });
 
-// --- タップフォーカス ---
-video.addEventListener('click', async e=>{
-  if(!track) return;
-  const rect=video.getBoundingClientRect();
-  const x=(e.clientX-rect.left)/rect.width;
-  const y=(e.clientY-rect.top)/rect.height;
-  focusRing.style.left=`${e.clientX-40}px`; focusRing.style.top=`${e.clientY-40}px`; focusRing.style.display='block';
-  setTimeout(()=>focusRing.style.display='none',800);
-  const caps=track.getCapabilities(); const constraints={};
-  if(caps.focusMode && caps.focusMode.includes('single-shot')) constraints.advanced=[{focusMode:'single-shot'}];
-  if(caps.exposureMode && caps.exposureMode.includes('continuous')){ constraints.advanced=constraints.advanced||[]; constraints.advanced.push({exposureMode:'continuous'}); }
-  if(caps.pointsOfInterest){ constraints.advanced=constraints.advanced||[]; constraints.advanced.push({pointsOfInterest:[{x,y}]}); }
-  try{ await track.applyConstraints(constraints); } catch(err){console.log(err);}
-});
+// --- OAuthアップロードのサンプル関数 ---
+async function uploadToGoogleDrive(blob, filename){
+  alert('Google DriveアップロードはOAuth認証が必要です。\n実装例は別途API連携が必要です。');
+}
+
+async function uploadToOneDrive(blob, filename){
+  alert('OneDriveアップロードはOAuth認証が必要です。\n実装例は別途API連携が必要です。');
+}
 </script>
 </body>
 </html>
