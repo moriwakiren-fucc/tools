@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body {
+    margin: 0;
+    background: #000;
+    color: #fff;
+    font-family: sans-serif;
+  }
+  #status {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    font-size: 14px;
+    padding: 4px;
+    z-index: 9999;
+    text-align: center;
+  }
+  #startCam {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 20px;
+    font-size: 16px;
+    background: #007AFF;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+  }
+  video {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: #000;
+  }
+</style>
+</head>
+<body>
+
+<div id="status">準備完了</div>
+<video id="camera" autoplay playsinline></video>
+<button id="startCam">📷 カメラを起動</button>
+
+<script>
+const statusDiv = document.getElementById('status');
+const startBtn   = document.getElementById('startCam');
+const video      = document.getElementById('camera');
+let stream = null;
+
+function showStatus(msg){
+  statusDiv.textContent = msg;
+}
+
+async function initCamera(facingMode='environment'){
+  showStatus('カメラ初期化中…');
+
+  // 以前のストリームを停止
+  if(stream){
+    stream.getTracks().forEach(t=>t.stop());
+  }
+
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: facingMode }
+    });
+    showStatus('カメラ起動成功！');
+    video.srcObject = stream;
+  }catch(err){
+    showStatus('カメラエラー: ' + err.name + ' / ' + err.message);
+  }
+}
+
+// ボタンクリックでカメラを開始
+startBtn.addEventListener('click', ()=>{
+  showStatus('ボタン押下 → カメラ要求');
+  initCamera(); // デフォルトは外カメラ
+});
+</script>
+
+</body>
+</html>
