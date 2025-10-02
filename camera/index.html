@@ -312,14 +312,19 @@ galleryBtn.addEventListener('click', () => {
       const doShareOrDownload = async () => {
         try {
           if (navigator.canShare && navigator.canShare({ files: [blob] })) {
-            await navigator.share({ files: [blob], title: '写真共有' });
+          const file = new File([blob], `photo_${i}.jpg`, { type: 'image/jpeg' });
+
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              title: '写真共有',
+              files: [file]
+            });
           } else {
+            // フォールバック：ダウンロード
             const a = document.createElement('a');
-            a.href = img.src;
-            a.download = 'photo_' + i + '.jpg';
-            document.body.appendChild(a);
+            a.href = URL.createObjectURL(blob);
+            a.download = `photo_${i}.jpg`;
             a.click();
-            a.remove();
           }
         } catch(err){
           const a = document.createElement('a');
