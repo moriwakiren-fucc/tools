@@ -12,21 +12,99 @@ video {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   object-fit: cover; background: black;
 }
-.controls { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; justify-content: center; gap: 40px; z-index: 10; }
-#switchCam { position: absolute; bottom: 120px; left: 20px; font-size: 1.4em; color: white; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px; border: none; z-index: 10; }
-#zoomSlider { position: absolute; bottom: 200px; left: 50%; transform: translateX(-50%); width: 200px; z-index: 10; }
-#zoomValue { position: absolute; bottom: 230px; left: 50%; transform: translateX(-50%); color: white; z-index: 10; }
-#galleryBtn { position: absolute; bottom: 40px; left: 20px; background: rgba(0,0,0,0.3); color: white; padding: 10px 14px; border-radius: 8px; border: none; z-index: 20; pointer-events: auto; }
-.shutter { width:80px; height:80px; border:4px solid white; border-radius:50%; background: rgba(255,255,255,0.8); }
-.focus-ring { position:absolute; border:2px solid yellow; border-radius:50%; width:80px; height:80px; pointer-events:none; display:none; z-index:12; }
-.galleryOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); display:none; flex-direction: column; overflow-y:auto; z-index:1000; padding:20px; align-items:center; }
-.galleryHeader { width:100%; display:flex; justify-content:flex-end; gap:10px; margin-bottom:10px; }
-.galleryHeader button { padding:8px 12px; border-radius:6px; border:none; background:rgba(255,255,255,0.2); color:white; font-size:1em; cursor:pointer; }
-.galleryImages { display:flex; flex-direction:column; gap:10px; width:100%; }
-.galleryItem { position:relative; }
-.galleryItem img { max-width:100%; border:2px solid white; border-radius:8px; display:block; }
-.shareBtn, .downloadBtn { position:absolute; top:5px; right:5px; background: rgba(0,0,0,0.5); color:white; padding:4px 6px; border-radius:4px; font-size:0.9em; cursor:pointer; }
-.downloadBtn { top:30px; }
+
+/* --- コントロール類 --- */
+.controls {
+  position: absolute; bottom: 40px; left: 0;
+  width: 100%; display: flex; justify-content: center; gap: 40px; z-index: 10;
+}
+
+#zoomSlider {
+  position: absolute; bottom: 140px; /* ←シャッターボタン近く */
+  left: 50%; transform: translateX(-50%);
+  width: 200px; z-index: 10;
+}
+
+#zoomValue {
+  position: absolute; bottom: 170px;
+  left: 50%; transform: translateX(-50%);
+  color: white; z-index: 10;
+}
+
+#switchCam {
+  position: absolute; bottom: 120px; left: 20px;
+  font-size: 1.4em; color: white; background: rgba(0,0,0,0.3);
+  padding: 8px 12px; border-radius: 8px; border: none; z-index: 10;
+}
+
+#galleryBtn {
+  position: absolute; bottom: 40px; left: 20px;
+  background: rgba(0,0,0,0.3); color: white;
+  padding: 10px 14px; border-radius: 8px; border: none; z-index: 20; pointer-events: auto;
+}
+
+.shutter {
+  width:80px; height:80px;
+  border:4px solid white; border-radius:50%;
+  background: rgba(255,255,255,0.8);
+}
+
+.focus-ring {
+  position:absolute; border:2px solid yellow; border-radius:50%;
+  width:80px; height:80px; pointer-events:none; display:none; z-index:12;
+}
+
+/* --- ギャラリー画面 --- */
+.galleryOverlay {
+  position: fixed; top:0; left:0; width:100%; height:100%;
+  background: rgba(0,0,0,0.95);
+  display:none; flex-direction: column; overflow-y:auto; z-index:1000; padding:20px; align-items:center;
+}
+
+.galleryHeader {
+  width:100%; display:flex; justify-content:flex-end; gap:10px; margin-bottom:10px;
+}
+
+.galleryHeader button {
+  padding:10px 16px; border-radius:6px; border:none;
+  background:rgba(255,255,255,0.2); color:white; font-size:1em; cursor:pointer;
+}
+
+/* 閉じるボタンの余白調整（右端にはりつかないように） */
+#closeGalleryBtn {
+  margin-right:15px;
+}
+
+.galleryImages {
+  display:flex; flex-wrap:wrap; justify-content:center; gap:20px; width:100%;
+}
+
+.galleryItem {
+  position:relative;
+}
+
+.galleryItem img {
+  max-width:45%; border:2px solid white; border-radius:8px; display:block;
+}
+
+/* ボタンは右寄せのまま。右端から少し左にずらす */
+.shareBtn, .downloadBtn {
+  position:absolute;
+  right:15px;        /* ← 右寄せだが少し左へずらしてはみ出し防止 */
+  width:110px;       /* ← 大きめ */
+  font-size:1.0em;
+  padding:6px 8px;
+  background: rgba(0,0,0,0.5);
+  color:white; border-radius:6px; cursor:pointer;
+}
+
+.shareBtn {
+  top:5px;
+}
+
+.downloadBtn {
+  top:60px;  /* ← 上下間隔を広く */
+}
 </style>
 </head>
 <body>
@@ -46,8 +124,8 @@ video {
 
 <div id="galleryOverlay" class="galleryOverlay">
   <div class="galleryHeader">
-    <button id="shareAllBtn">まとめて共有</button>
     <button id="closeGalleryBtn">閉じる</button>
+    <button id="shareAllBtn">まとめて共有</button>
   </div>
   <div class="galleryImages" id="galleryImages"></div>
 </div>
@@ -63,9 +141,8 @@ const galleryOverlay = document.getElementById('galleryOverlay');
 const galleryImages = document.getElementById('galleryImages');
 const closeGalleryBtn = document.getElementById('closeGalleryBtn');
 const shareAllBtn = document.getElementById('shareAllBtn');
-const focusRing = document.getElementById('focusRing');
 
-let currentFacingMode='environment', stream=null, track=null, photos=[], startPinchDist=null, startZoom=1, isCapturing=false;
+let currentFacingMode='environment', stream=null, track=null, photos=[], isCapturing=false;
 
 // --- カメラ初期化 ---
 async function initCamera(facingMode='environment'){
@@ -93,50 +170,35 @@ zoomSlider.addEventListener('input', async ()=>{
   if(track){ try{ await track.applyConstraints({advanced:[{zoom:z}]}); }catch(e){console.log(e);} }
 });
 
-// --- ピンチズーム ---
-video.addEventListener('touchstart', e=>{
-  if(e.touches.length===2){ e.preventDefault();
-    startPinchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
-    startZoom=parseFloat(zoomSlider.value);
-  }
-});
-video.addEventListener('touchmove', e=>{
-  if(e.touches.length===2 && startPinchDist && track){ e.preventDefault();
-    const newDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
-    let scale=newDist/startPinchDist;
-    let z=Math.min(Math.max(startZoom*scale, zoomSlider.min), zoomSlider.max);
-    zoomSlider.value=z.toFixed(2); zoomValue.textContent=z.toFixed(1)+'x';
-    try{ track.applyConstraints({advanced:[{zoom:z}]}); }catch(e){console.log(e);}
-  }
-});
-video.addEventListener('touchend', e=>{ if(e.touches.length<2) startPinchDist=null; });
-
 // --- カメラ切替 ---
 switchCamBtn.addEventListener('click', ()=>{ currentFacingMode=currentFacingMode==='environment'?'user':'environment'; initCamera(currentFacingMode); });
 initCamera(currentFacingMode);
 
-// --- 撮影（画面停止→再生再開→保存） ---
+// --- 撮影（0.25秒停止→再開→保存） ---
 captureBtn.addEventListener('click', async ()=>{
   if(isCapturing) return;
   isCapturing=true;
 
-  video.pause();                       
-  await new Promise(resolve=>setTimeout(resolve,250));
-  video.play();                        
+  video.pause();
+  await new Promise(r=>setTimeout(r,250));
+  video.play();
 
-  const canvas=document.createElement('canvas'); canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+  // 撮影データを保存
+  const canvas=document.createElement('canvas');
+  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
   canvas.getContext('2d').drawImage(video,0,0);
-  canvas.toBlob(blob=>photos.push(blob),'image/jpeg');
+  const blob = await new Promise(resolve => canvas.toBlob(resolve,'image/jpeg'));
+  photos.unshift(blob); // ← 新しい写真を先頭に追加
 
   isCapturing=false;
 });
 
-// --- ギャラリー ---
+// --- ギャラリー表示 ---
 galleryBtn.addEventListener('click', ()=>{
   galleryImages.innerHTML='';
   photos.forEach((blob,i)=>{
     const item=document.createElement('div'); item.className='galleryItem';
-    const img=document.createElement('img'); img.src=URL.createObjectURL(blob); 
+    const img=document.createElement('img'); img.src=URL.createObjectURL(blob); item.appendChild(img);
 
     const shareBtn=document.createElement('button'); shareBtn.textContent='共有'; shareBtn.className='shareBtn';
     shareBtn.addEventListener('click', async e=>{
@@ -152,11 +214,9 @@ galleryBtn.addEventListener('click', ()=>{
       const a=document.createElement('a'); a.href=img.src; a.download=`photo_${i}.jpg`; a.click();
     });
 
-    item.appendChild(img);
     item.appendChild(shareBtn);
     item.appendChild(downloadBtn);
-
-    galleryImages.prepend(item);
+    galleryImages.appendChild(item);
   });
   galleryOverlay.style.display='flex';
 });
