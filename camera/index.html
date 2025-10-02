@@ -60,7 +60,7 @@ video{
 }
 #zoomSlider{
   position:absolute;
-  bottom:120px;   /* シャッターボタン近く */
+  bottom:120px; 
   left:50%;
   transform:translateX(-50%);
   width:200px;
@@ -76,6 +76,7 @@ video{
   background:rgba(0,0,0,0.8);
   display:none;
   flex-direction:column;
+  justify-content:center;
   align-items:center;
   overflow-y:auto;
   padding:20px;
@@ -84,18 +85,18 @@ video{
 
 #galleryButtons{
   position:fixed;
-  top:15px;
-  right:15px;
+  top:20px;
+  right:15px;           /* 右端から少し内側 */
   display:flex;
   flex-direction:column;
   align-items:flex-end;
-  gap:15px;              /* ボタンの間隔 */
+  gap:20px;             /* ボタン間のスペース */
   z-index:1000;
 }
 
 .galleryControlBtn{
-  width:150px;
-  padding:12px 0;
+  width:160px;
+  padding:14px 0;
   font-size:1.1rem;
   text-align:center;
   border:none;
@@ -111,8 +112,12 @@ video{
   background:rgba(255,255,255,1);
 }
 
+#closeGalleryBtn{
+  align-self:flex-end;  /* 閉じるは最上部・最右端 */
+}
+
 #galleryImages{
-  margin-top:150px;
+  margin-top:140px;
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -135,7 +140,7 @@ video{
 
 .galleryItem button{
   display:block;
-  width:130px;
+  width:120px;
   margin:10px auto;
   padding:10px 0;
   font-size:1rem;
@@ -169,6 +174,8 @@ video{
   <div id="galleryImages"></div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
 <script>
 const video=document.getElementById('camera');
 const shutterBtn=document.getElementById('shutterBtn');
@@ -177,9 +184,9 @@ const galleryBtn=document.getElementById('galleryBtn');
 const zoomSlider=document.getElementById('zoomSlider');
 const galleryOverlay=document.getElementById('galleryOverlay');
 const closeGalleryBtn=document.getElementById('closeGalleryBtn');
-const galleryImages=document.getElementById('galleryImages');
 const shareAllBtn=document.getElementById('shareAllBtn');
 const downloadAllBtn=document.getElementById('downloadAllBtn');
+const galleryImages=document.getElementById('galleryImages');
 
 let currentStream=null;
 let useFrontCamera=false;
@@ -191,9 +198,7 @@ async function startCamera(){
   }
   try{
     currentStream=await navigator.mediaDevices.getUserMedia({
-      video:{
-        facingMode:useFrontCamera?'user':'environment'
-      },
+      video:{ facingMode:useFrontCamera?'user':'environment' },
       audio:false
     });
     video.srcObject=currentStream;
@@ -214,6 +219,11 @@ function applyZoom(){
 // ズームスライダー
 zoomSlider.addEventListener('input',applyZoom);
 
+// ピンチズーム防止
+document.addEventListener('gesturestart',e=>e.preventDefault());
+document.addEventListener('gesturechange',e=>e.preventDefault());
+document.addEventListener('gestureend',e=>e.preventDefault());
+
 // カメラ切替
 switchCamBtn.addEventListener('click',()=>{
   useFrontCamera=!useFrontCamera;
@@ -228,14 +238,14 @@ shutterBtn.addEventListener('click',()=>{
   const ctx=canvas.getContext('2d');
   ctx.drawImage(video,0,0,canvas.width,canvas.height);
   canvas.toBlob(blob=>{
-    photos.unshift(blob);  // 新しい写真を上に積む
+    photos.unshift(blob);      // 上に積む
     updateGalleryThumb(blob);
   },'image/jpeg');
 
-  // 撮影後0.25秒停止
-  const track=video.srcObject.getVideoTracks()[0];
-  track.enabled=false;
-  setTimeout(()=>track.enabled=true,250);
+  // 撮影後、映像を0.25秒停止
+  const streamTrack=video.srcObject.getVideoTracks()[0];
+  streamTrack.enabled=false;
+  setTimeout(()=>streamTrack.enabled=true,250);
 });
 
 // サムネイル更新
@@ -250,6 +260,7 @@ galleryBtn.addEventListener('click',()=>{
   photos.forEach((blob,i)=>{
     const item=document.createElement('div');
     item.className='galleryItem';
+
     const img=document.createElement('img');
     img.src=URL.createObjectURL(blob);
 
@@ -285,19 +296,24 @@ galleryBtn.addEventListener('click',()=>{
 shareAllBtn.addEventListener('click',async()=>{
   const files=photos.map((b,i)=>new File([b],`photo_${i}.jpg`,{type:'image/jpeg'}));
   if(navigator.canShare && navigator.canShare({files})){
-    try{ await navigator.share({files,title:'まとめて共有'}); }
+    try{ await navigator.share({files,title:'全共有'}); }
     catch(err){ console.log('全共有エラー',err); }
   }
 });
 
-// 全ダウンロード
-downloadAllBtn.addEventListener('click',()=>{
-  photos.forEach((blob,i)=>{
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);
-    a.download=`photo_${i}.jpg`;
-    a.click();
+// 全ダウンロード（ZIP）
+downloadAllBtn.addEventListener('click',async()=>{
+  const zip=new JSZip();
+  photos.forEach((b,i)=>{
+    zip.file(`photo_${i}.jpg`,b);
   });
+  const content=await zip.generateAsync({type:'blob'});
+  const url=URL.createObjectURL(content);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='photos.zip';
+  a.click();
+  URL.revokeObjectURL(url);
 });
 
 // 閉じる
