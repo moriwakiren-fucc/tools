@@ -60,7 +60,7 @@ video{
 }
 #zoomSlider{
   position:absolute;
-  bottom:120px;  /* ← シャッターボタンに近づけた */
+  bottom:120px;   /* シャッターボタン近く */
   left:50%;
   transform:translateX(-50%);
   width:200px;
@@ -76,7 +76,6 @@ video{
   background:rgba(0,0,0,0.8);
   display:none;
   flex-direction:column;
-  justify-content:center;
   align-items:center;
   overflow-y:auto;
   padding:20px;
@@ -85,17 +84,17 @@ video{
 
 #galleryButtons{
   position:fixed;
-  top:20px;
-  right:15px;          /* 右端から少し左へ余白 */
+  top:15px;
+  right:15px;
   display:flex;
   flex-direction:column;
   align-items:flex-end;
-  gap:20px;            /* ボタン間のスペースを広めに */
+  gap:15px;              /* ボタンの間隔 */
   z-index:1000;
 }
 
 .galleryControlBtn{
-  width:140px;
+  width:150px;
   padding:12px 0;
   font-size:1.1rem;
   text-align:center;
@@ -112,12 +111,8 @@ video{
   background:rgba(255,255,255,1);
 }
 
-#closeGalleryBtn{
-  align-self:flex-end;   /* 閉じるは最も右 */
-}
-
 #galleryImages{
-  margin-top:120px;
+  margin-top:150px;
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -140,7 +135,7 @@ video{
 
 .galleryItem button{
   display:block;
-  width:120px;
+  width:130px;
   margin:10px auto;
   padding:10px 0;
   font-size:1rem;
@@ -167,8 +162,9 @@ video{
 
 <div id="galleryOverlay">
   <div id="galleryButtons">
-    <button id="shareAllBtn" class="galleryControlBtn">まとめて共有</button>
     <button id="closeGalleryBtn" class="galleryControlBtn">閉じる</button>
+    <button id="shareAllBtn" class="galleryControlBtn">全共有</button>
+    <button id="downloadAllBtn" class="galleryControlBtn">全ダウンロード</button>
   </div>
   <div id="galleryImages"></div>
 </div>
@@ -183,6 +179,7 @@ const galleryOverlay=document.getElementById('galleryOverlay');
 const closeGalleryBtn=document.getElementById('closeGalleryBtn');
 const galleryImages=document.getElementById('galleryImages');
 const shareAllBtn=document.getElementById('shareAllBtn');
+const downloadAllBtn=document.getElementById('downloadAllBtn');
 
 let currentStream=null;
 let useFrontCamera=false;
@@ -214,13 +211,8 @@ function applyZoom(){
   }
 }
 
-// ズームスライダー（リアルタイム反映）
+// ズームスライダー
 zoomSlider.addEventListener('input',applyZoom);
-
-// ピンチズーム防止
-document.addEventListener('gesturestart',e=>e.preventDefault());
-document.addEventListener('gesturechange',e=>e.preventDefault());
-document.addEventListener('gestureend',e=>e.preventDefault());
 
 // カメラ切替
 switchCamBtn.addEventListener('click',()=>{
@@ -236,17 +228,17 @@ shutterBtn.addEventListener('click',()=>{
   const ctx=canvas.getContext('2d');
   ctx.drawImage(video,0,0,canvas.width,canvas.height);
   canvas.toBlob(blob=>{
-    photos.unshift(blob);   // 上に積む
+    photos.unshift(blob);  // 新しい写真を上に積む
     updateGalleryThumb(blob);
   },'image/jpeg');
 
-  // 撮影後、映像を0.25秒停止
-  const streamTrack=video.srcObject.getVideoTracks()[0];
-  streamTrack.enabled=false;
-  setTimeout(()=>streamTrack.enabled=true,250);
+  // 撮影後0.25秒停止
+  const track=video.srcObject.getVideoTracks()[0];
+  track.enabled=false;
+  setTimeout(()=>track.enabled=true,250);
 });
 
-// ギャラリーサムネイル更新
+// サムネイル更新
 function updateGalleryThumb(blob){
   galleryBtn.style.backgroundImage=`url(${URL.createObjectURL(blob)})`;
   galleryBtn.style.backgroundSize='cover';
@@ -289,13 +281,23 @@ galleryBtn.addEventListener('click',()=>{
   galleryOverlay.style.display='flex';
 });
 
-// まとめて共有
+// 全共有
 shareAllBtn.addEventListener('click',async()=>{
   const files=photos.map((b,i)=>new File([b],`photo_${i}.jpg`,{type:'image/jpeg'}));
   if(navigator.canShare && navigator.canShare({files})){
     try{ await navigator.share({files,title:'まとめて共有'}); }
-    catch(err){ console.log('まとめ共有エラー',err); }
+    catch(err){ console.log('全共有エラー',err); }
   }
+});
+
+// 全ダウンロード
+downloadAllBtn.addEventListener('click',()=>{
+  photos.forEach((blob,i)=>{
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`photo_${i}.jpg`;
+    a.click();
+  });
 });
 
 // 閉じる
