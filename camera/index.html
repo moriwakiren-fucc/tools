@@ -60,41 +60,70 @@ img#preview { display: none; z-index: 2; }
 
 .galleryOverlay {
   position: fixed;
-  top:0; left:0; width:100%; height:100%;
+  top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(0,0,0,0.95);
   display: none;
   flex-direction: column;
   overflow-y: auto;
-  z-index: 30;           /* 最前面 */
+  z-index: 1000;        /* 最前面 */
   padding: 20px;
   align-items: center;
 }
 
 .galleryHeader {
-  width: 100%; display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 10px; z-index: 31;
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 10px;
+  position: relative;    /* クリックを通す */
+  z-index: 1001;
 }
 
 .galleryHeader button {
-  padding: 8px 12px; border-radius: 6px; border: none;
-  background: rgba(255,255,255,0.2); color: white; font-size: 1em; cursor: pointer;
-  pointer-events: auto; /* クリック有効 */
-  z-index: 31;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(255,255,255,0.2);
+  color: white;
+  font-size: 1em;
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 1002;
+}
+
+.galleryImages {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
 }
 
 .galleryItem {
-  position: relative; z-index: 31; pointer-events: auto;
+  position: relative;
+  z-index: 1001;
+  pointer-events: auto;
 }
 
 .galleryItem img {
-  max-width: 45%; border: 2px solid white; border-radius: 8px; display: block;
+  max-width: 45%;
+  border: 2px solid white;
+  border-radius: 8px;
+  display: block;
 }
 
 .shareBtn {
-  position: absolute; top: 5px; right: 5px;
-  background: rgba(0,0,0,0.5); color: white; padding: 4px 6px;
-  border-radius: 4px; font-size: 0.9em; cursor: pointer;
-  z-index: 32;
+  position: absolute;
+  top: 5px; right: 5px;
+  background: rgba(0,0,0,0.5);
+  color: white;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  cursor: pointer;
   pointer-events: auto;
+  z-index: 1002;
 }
 
 .shutter {
