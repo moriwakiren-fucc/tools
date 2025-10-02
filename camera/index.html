@@ -19,42 +19,47 @@ img#preview { display: none; z-index: 2; }
 .controls {
   position: absolute; bottom: 40px; left: 0; width: 100%;
   display: flex; justify-content: center; align-items: center;
-  gap: 40px; z-index: 3;
+  gap: 40px; z-index: 10;  /* シャッターボタンも最前面 */
 }
 
 #switchCam {
   position: absolute; bottom: 120px; left: 20px;
   font-size: 1.4em; color: white;
   background: rgba(0,0,0,0.3); padding: 8px 12px;
-  border-radius: 8px; border: none; z-index: 3;
+  border-radius: 8px; border: none; z-index: 10;
 }
 
 #zoomSlider {
   position: absolute; bottom: 200px; left: 50%; transform: translateX(-50%);
-  width: 200px; z-index: 3;
+  width: 200px; z-index: 10;
 }
 
 #zoomValue {
   position: absolute; bottom: 230px; left: 50%; transform: translateX(-50%);
-  color: white; z-index: 3;
+  color: white; z-index: 10;
 }
 
 #aspectBtn {
   position: absolute; top: 20px; right: 20px;
   background: rgba(0,0,0,0.3); color: white;
   padding: 8px 12px; border-radius: 8px; border: none;
-  z-index: 3;
+  z-index: 10;
 }
 
 #galleryBtn {
   position: absolute; bottom: 40px; left: 20px;
-  background: rgba(0,0,0,0.3); color: white;
-  padding: 10px 14px; border-radius: 8px; border: none; z-index: 3;
+  background: rgba(0,0,0,0.3);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  z-index: 11;          /* 確実に最前面 */
+  pointer-events: auto;  /* クリック可能 */
 }
 
 .galleryOverlay {
   position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9);
-  display: none; flex-wrap: wrap; overflow-y: auto; z-index: 10; justify-content: center; padding: 20px;
+  display: none; flex-wrap: wrap; overflow-y: auto; z-index: 20; justify-content: center; padding: 20px;
 }
 
 .galleryOverlay img {
@@ -69,7 +74,7 @@ img#preview { display: none; z-index: 2; }
 
 .focus-ring {
   position: absolute; border: 2px solid yellow; border-radius: 50%;
-  width: 80px; height: 80px; pointer-events: none; display: none; z-index: 4;
+  width: 80px; height: 80px; pointer-events: none; display: none; z-index: 12;
 }
 </style>
 </head>
@@ -158,7 +163,7 @@ video.addEventListener('touchstart', e => {
 });
 video.addEventListener('touchmove', e => {
   if(e.touches.length === 2 && startPinchDist && track){
-    e.preventDefault(); // ブラウザの拡大防止
+    e.preventDefault();
     const newDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX,
                                e.touches[0].clientY - e.touches[1].clientY);
     let scale = newDist/startPinchDist;
@@ -258,4 +263,3 @@ video.addEventListener('click', async e=>{
 </script>
 </body>
 </html>
-
