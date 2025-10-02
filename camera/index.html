@@ -2,241 +2,308 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-html, body {
-  margin: 0; height: 100%; overflow: hidden; background: black; font-family: sans-serif;
-  touch-action: none;
+body,html{
+  margin:0;
+  padding:0;
+  height:100%;
+  background:black;
+  overflow:hidden;
 }
-video {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  object-fit: cover; background: black;
-}
-
-/* --- コントロール類 --- */
-.controls {
-  position: absolute; bottom: 40px; left: 0;
-  width: 100%; display: flex; justify-content: center; gap: 40px; z-index: 10;
-}
-
-#zoomSlider {
-  position: absolute; bottom: 140px; /* ←シャッターボタン近く */
-  left: 50%; transform: translateX(-50%);
-  width: 200px; z-index: 10;
-}
-
-#zoomValue {
-  position: absolute; bottom: 170px;
-  left: 50%; transform: translateX(-50%);
-  color: white; z-index: 10;
-}
-
-#switchCam {
-  position: absolute; bottom: 120px; left: 20px;
-  font-size: 1.4em; color: white; background: rgba(0,0,0,0.3);
-  padding: 8px 12px; border-radius: 8px; border: none; z-index: 10;
-}
-
-#galleryBtn {
-  position: absolute; bottom: 40px; left: 20px;
-  background: rgba(0,0,0,0.3); color: white;
-  padding: 10px 14px; border-radius: 8px; border: none; z-index: 20; pointer-events: auto;
-}
-
-.shutter {
-  width:80px; height:80px;
-  border:4px solid white; border-radius:50%;
-  background: rgba(255,255,255,0.8);
-}
-
-.focus-ring {
-  position:absolute; border:2px solid yellow; border-radius:50%;
-  width:80px; height:80px; pointer-events:none; display:none; z-index:12;
-}
-
-/* --- ギャラリー画面 --- */
-.galleryOverlay {
-  position: fixed; top:0; left:0; width:100%; height:100%;
-  background: rgba(0,0,0,0.95);
-  display:none; flex-direction: column; overflow-y:auto; z-index:1000; padding:20px; align-items:center;
-}
-
-.galleryHeader {
-  width:100%; display:flex; justify-content:flex-end; gap:10px; margin-bottom:10px;
-}
-
-.galleryHeader button {
-  padding:10px 16px; border-radius:6px; border:none;
-  background:rgba(255,255,255,0.2); color:white; font-size:1em; cursor:pointer;
-}
-
-/* 閉じるボタンの余白調整（右端にはりつかないように） */
-#closeGalleryBtn {
-  margin-right:15px;
-}
-
-.galleryImages {
-  display:flex; flex-wrap:wrap; justify-content:center; gap:20px; width:100%;
-}
-
-.galleryItem {
+#cameraContainer{
   position:relative;
+  width:100%;
+  height:100%;
+  background:black;
 }
-
-.galleryItem img {
-  max-width:45%; border:2px solid white; border-radius:8px; display:block;
+video{
+  width:100%;
+  height:100%;
+  object-fit:cover;
 }
-
-/* ボタンは右寄せのまま。右端から少し左にずらす */
-.shareBtn, .downloadBtn {
+#shutterBtn{
   position:absolute;
-  right:15px;        /* ← 右寄せだが少し左へずらしてはみ出し防止 */
-  width:110px;       /* ← 大きめ */
-  font-size:1.0em;
-  padding:6px 8px;
-  background: rgba(0,0,0,0.5);
-  color:white; border-radius:6px; cursor:pointer;
+  bottom:40px;
+  left:50%;
+  transform:translateX(-50%);
+  width:80px;
+  height:80px;
+  border-radius:50%;
+  background:white;
+  border:4px solid rgba(255,255,255,0.5);
+  cursor:pointer;
+}
+#switchCamBtn{
+  position:absolute;
+  bottom:140px;
+  left:50%;
+  transform:translateX(-50%);
+  width:50px;
+  height:50px;
+  border-radius:50%;
+  background:rgba(255,255,255,0.7);
+  border:none;
+  cursor:pointer;
+}
+#galleryBtn{
+  position:absolute;
+  bottom:40px;
+  left:20px;
+  width:60px;
+  height:60px;
+  border-radius:10px;
+  background:rgba(255,255,255,0.3);
+  border:none;
+  cursor:pointer;
+  overflow:hidden;
+}
+#zoomSlider{
+  position:absolute;
+  bottom:120px;  /* ← シャッターボタンに近づけた */
+  left:50%;
+  transform:translateX(-50%);
+  width:200px;
 }
 
-.shareBtn {
-  top:5px;
+/* ギャラリー */
+#galleryOverlay{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.8);
+  display:none;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  overflow-y:auto;
+  padding:20px;
+  box-sizing:border-box;
 }
 
-.downloadBtn {
-  top:60px;  /* ← 上下間隔を広く */
+#galleryButtons{
+  position:fixed;
+  top:20px;
+  right:15px;          /* 右端から少し左へ余白 */
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:20px;            /* ボタン間のスペースを広めに */
+  z-index:1000;
+}
+
+.galleryControlBtn{
+  width:140px;
+  padding:12px 0;
+  font-size:1.1rem;
+  text-align:center;
+  border:none;
+  border-radius:8px;
+  background:rgba(255,255,255,0.9);
+  color:#000;
+  cursor:pointer;
+  box-shadow:0 2px 6px rgba(0,0,0,0.3);
+  transition:background 0.2s;
+}
+
+.galleryControlBtn:hover{
+  background:rgba(255,255,255,1);
+}
+
+#closeGalleryBtn{
+  align-self:flex-end;   /* 閉じるは最も右 */
+}
+
+#galleryImages{
+  margin-top:120px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:20px;
+}
+
+.galleryItem{
+  background:rgba(255,255,255,0.1);
+  padding:10px;
+  border-radius:8px;
+  text-align:center;
+}
+
+.galleryItem img{
+  max-width:80vw;
+  max-height:60vh;
+  display:block;
+  margin-bottom:10px;
+}
+
+.galleryItem button{
+  display:block;
+  width:120px;
+  margin:10px auto;
+  padding:10px 0;
+  font-size:1rem;
+  border:none;
+  border-radius:6px;
+  background:rgba(255,255,255,0.9);
+  color:#000;
+  cursor:pointer;
+}
+
+.galleryItem button:hover{
+  background:rgba(255,255,255,1);
 }
 </style>
 </head>
 <body>
-
-<video id="camera" autoplay playsinline></video>
-
-<button id="switchCam">🔄</button>
-<input type="range" id="zoomSlider" min="1" max="5" step="0.1" value="1">
-<div id="zoomValue">1x</div>
-<button id="galleryBtn">🖼️</button>
-
-<div class="controls">
-  <button id="captureBtn" class="shutter"></button>
+<div id="cameraContainer">
+  <video id="camera" autoplay playsinline></video>
+  <button id="galleryBtn">📷</button>
+  <input type="range" id="zoomSlider" min="1" max="3" step="0.1" value="1">
+  <button id="switchCamBtn">⇆</button>
+  <button id="shutterBtn"></button>
 </div>
 
-<div id="focusRing" class="focus-ring"></div>
-
-<div id="galleryOverlay" class="galleryOverlay">
-  <div class="galleryHeader">
-    <button id="closeGalleryBtn">閉じる</button>
-    <button id="shareAllBtn">まとめて共有</button>
+<div id="galleryOverlay">
+  <div id="galleryButtons">
+    <button id="shareAllBtn" class="galleryControlBtn">まとめて共有</button>
+    <button id="closeGalleryBtn" class="galleryControlBtn">閉じる</button>
   </div>
-  <div class="galleryImages" id="galleryImages"></div>
+  <div id="galleryImages"></div>
 </div>
 
 <script>
-const video = document.getElementById('camera');
-const captureBtn = document.getElementById('captureBtn');
-const switchCamBtn = document.getElementById('switchCam');
-const zoomSlider = document.getElementById('zoomSlider');
-const zoomValue = document.getElementById('zoomValue');
-const galleryBtn = document.getElementById('galleryBtn');
-const galleryOverlay = document.getElementById('galleryOverlay');
-const galleryImages = document.getElementById('galleryImages');
-const closeGalleryBtn = document.getElementById('closeGalleryBtn');
-const shareAllBtn = document.getElementById('shareAllBtn');
+const video=document.getElementById('camera');
+const shutterBtn=document.getElementById('shutterBtn');
+const switchCamBtn=document.getElementById('switchCamBtn');
+const galleryBtn=document.getElementById('galleryBtn');
+const zoomSlider=document.getElementById('zoomSlider');
+const galleryOverlay=document.getElementById('galleryOverlay');
+const closeGalleryBtn=document.getElementById('closeGalleryBtn');
+const galleryImages=document.getElementById('galleryImages');
+const shareAllBtn=document.getElementById('shareAllBtn');
 
-let currentFacingMode='environment', stream=null, track=null, photos=[], isCapturing=false;
+let currentStream=null;
+let useFrontCamera=false;
+let photos=[];
 
-// --- カメラ初期化 ---
-async function initCamera(facingMode='environment'){
-  if(stream) stream.getTracks().forEach(t=>t.stop());
+async function startCamera(){
+  if(currentStream){
+    currentStream.getTracks().forEach(t=>t.stop());
+  }
   try{
-    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode}});
-    video.srcObject = stream;
-    track = stream.getVideoTracks()[0];
-    setupZoomSlider();
-  }catch(err){ alert('カメラを利用できません: '+err.message); }
+    currentStream=await navigator.mediaDevices.getUserMedia({
+      video:{
+        facingMode:useFrontCamera?'user':'environment'
+      },
+      audio:false
+    });
+    video.srcObject=currentStream;
+    applyZoom();
+  }catch(err){
+    console.error('カメラ起動エラー:',err);
+  }
 }
 
-// --- ズーム ---
-function setupZoomSlider(){
-  const caps = track.getCapabilities();
-  if(caps.zoom){
-    zoomSlider.min=caps.zoom.min; zoomSlider.max=caps.zoom.max; zoomSlider.step=caps.zoom.step||0.1;
-    zoomSlider.value=track.getSettings().zoom||caps.zoom.min;
-    zoomSlider.style.display='block'; zoomValue.textContent=zoomSlider.value+'x';
-  } else { zoomSlider.style.display='none'; zoomValue.style.display='none'; }
+function applyZoom(){
+  const track=currentStream?.getVideoTracks()[0];
+  const capabilities=track?.getCapabilities?.();
+  if(capabilities?.zoom){
+    track.applyConstraints({advanced:[{zoom:parseFloat(zoomSlider.value)}]});
+  }
 }
-zoomSlider.addEventListener('input', async ()=>{
-  const z=parseFloat(zoomSlider.value);
-  zoomValue.textContent=z.toFixed(1)+'x';
-  if(track){ try{ await track.applyConstraints({advanced:[{zoom:z}]}); }catch(e){console.log(e);} }
+
+// ズームスライダー（リアルタイム反映）
+zoomSlider.addEventListener('input',applyZoom);
+
+// ピンチズーム防止
+document.addEventListener('gesturestart',e=>e.preventDefault());
+document.addEventListener('gesturechange',e=>e.preventDefault());
+document.addEventListener('gestureend',e=>e.preventDefault());
+
+// カメラ切替
+switchCamBtn.addEventListener('click',()=>{
+  useFrontCamera=!useFrontCamera;
+  startCamera();
 });
 
-// --- カメラ切替 ---
-switchCamBtn.addEventListener('click', ()=>{ currentFacingMode=currentFacingMode==='environment'?'user':'environment'; initCamera(currentFacingMode); });
-initCamera(currentFacingMode);
-
-// --- 撮影（0.25秒停止→再開→保存） ---
-captureBtn.addEventListener('click', async ()=>{
-  if(isCapturing) return;
-  isCapturing=true;
-
-  video.pause();
-  await new Promise(r=>setTimeout(r,250));
-  video.play();
-
-  // 撮影データを保存
+// シャッター
+shutterBtn.addEventListener('click',()=>{
   const canvas=document.createElement('canvas');
-  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
-  canvas.getContext('2d').drawImage(video,0,0);
-  const blob = await new Promise(resolve => canvas.toBlob(resolve,'image/jpeg'));
-  photos.unshift(blob); // ← 新しい写真を先頭に追加
+  canvas.width=video.videoWidth;
+  canvas.height=video.videoHeight;
+  const ctx=canvas.getContext('2d');
+  ctx.drawImage(video,0,0,canvas.width,canvas.height);
+  canvas.toBlob(blob=>{
+    photos.unshift(blob);   // 上に積む
+    updateGalleryThumb(blob);
+  },'image/jpeg');
 
-  isCapturing=false;
+  // 撮影後、映像を0.25秒停止
+  const streamTrack=video.srcObject.getVideoTracks()[0];
+  streamTrack.enabled=false;
+  setTimeout(()=>streamTrack.enabled=true,250);
 });
 
-// --- ギャラリー表示 ---
-galleryBtn.addEventListener('click', ()=>{
+// ギャラリーサムネイル更新
+function updateGalleryThumb(blob){
+  galleryBtn.style.backgroundImage=`url(${URL.createObjectURL(blob)})`;
+  galleryBtn.style.backgroundSize='cover';
+}
+
+// ギャラリー表示
+galleryBtn.addEventListener('click',()=>{
   galleryImages.innerHTML='';
   photos.forEach((blob,i)=>{
-    const item=document.createElement('div'); item.className='galleryItem';
-    const img=document.createElement('img'); img.src=URL.createObjectURL(blob); item.appendChild(img);
+    const item=document.createElement('div');
+    item.className='galleryItem';
+    const img=document.createElement('img');
+    img.src=URL.createObjectURL(blob);
 
-    const shareBtn=document.createElement('button'); shareBtn.textContent='共有'; shareBtn.className='shareBtn';
-    shareBtn.addEventListener('click', async e=>{
-      e.stopPropagation(); e.preventDefault();
-      const file=new File([blob], `photo_${i}.jpg`, {type:'image/jpeg'});
+    const shareBtn=document.createElement('button');
+    shareBtn.textContent='共有';
+    shareBtn.addEventListener('click',async()=>{
+      const file=new File([blob],`photo_${i}.jpg`,{type:'image/jpeg'});
       if(navigator.canShare && navigator.canShare({files:[file]})){
-        try{ await navigator.share({files:[file], title:'写真共有'}); }catch(err){ console.log('共有エラー',err);}
+        try{ await navigator.share({files:[file],title:'写真共有'}); }
+        catch(err){ console.log('共有エラー',err); }
       }
     });
 
-    const downloadBtn=document.createElement('button'); downloadBtn.textContent='ダウンロード'; downloadBtn.className='downloadBtn';
-    downloadBtn.addEventListener('click', e=>{
-      const a=document.createElement('a'); a.href=img.src; a.download=`photo_${i}.jpg`; a.click();
+    const downloadBtn=document.createElement('button');
+    downloadBtn.textContent='ダウンロード';
+    downloadBtn.addEventListener('click',()=>{
+      const a=document.createElement('a');
+      a.href=img.src;
+      a.download=`photo_${i}.jpg`;
+      a.click();
     });
 
+    item.appendChild(img);
     item.appendChild(shareBtn);
     item.appendChild(downloadBtn);
+
     galleryImages.appendChild(item);
   });
   galleryOverlay.style.display='flex';
 });
 
-// --- ギャラリー閉じる ---
-closeGalleryBtn.addEventListener('click', ()=>{ galleryOverlay.style.display='none'; });
-
-// --- まとめて共有 ---
-shareAllBtn.addEventListener('click', async ()=>{
-  if(photos.length===0) return;
-  const files = photos.map((b,i)=>new File([b],`photo_${i}.jpg`,{type:'image/jpeg'}));
+// まとめて共有
+shareAllBtn.addEventListener('click',async()=>{
+  const files=photos.map((b,i)=>new File([b],`photo_${i}.jpg`,{type:'image/jpeg'}));
   if(navigator.canShare && navigator.canShare({files})){
-    try{ await navigator.share({files, title:'まとめて写真共有'}); }catch(err){ console.log('まとめて共有エラー',err);}
-  }else{
-    files.forEach((file,i)=>{
-      const a=document.createElement('a'); a.href=URL.createObjectURL(file); a.download=`photo_${i}.jpg`; a.click();
-      setTimeout(()=>URL.revokeObjectURL(a.href),100);
-    });
+    try{ await navigator.share({files,title:'まとめて共有'}); }
+    catch(err){ console.log('まとめ共有エラー',err); }
   }
 });
+
+// 閉じる
+closeGalleryBtn.addEventListener('click',()=>{
+  galleryOverlay.style.display='none';
+});
+
+startCamera();
 </script>
 </body>
 </html>
