@@ -267,12 +267,17 @@ galleryBtn.addEventListener('click', ()=>{
     shareBtn.textContent = '共有';
     shareBtn.className = 'shareBtn';
     shareBtn.addEventListener('click', async () => {
+      // Web Share API 対応なら共有、非対応ならダウンロード
       if(navigator.canShare && navigator.canShare({ files: [blob] })){
         try{
           await navigator.share({ files: [blob], title: '写真共有' });
         }catch(err){ console.log(err); }
       } else {
-        alert('このブラウザでは共有できません。');
+        // ダウンロード fallback
+        const a = document.createElement('a');
+        a.href = img.src;
+        a.download = 'photo_'+i+'.jpg';
+        a.click();
       }
     });
     item.appendChild(shareBtn);
@@ -282,20 +287,24 @@ galleryBtn.addEventListener('click', ()=>{
   galleryOverlay.style.display = 'flex';
 });
 
-// --- ギャラリー閉じる ---
-closeGalleryBtn.addEventListener('click', ()=>{
-  galleryOverlay.style.display = 'none';
-});
-
 // --- まとめて共有 ---
 shareAllBtn.addEventListener('click', async ()=>{
   if(photos.length === 0) return;
+
   if(navigator.canShare && navigator.canShare({ files: photos })){
     try{
       await navigator.share({ files: photos, title: 'まとめて写真共有' });
     }catch(err){ console.log(err); }
   } else {
-    alert('このブラウザではまとめて共有できません。個別に保存してください。');
+    // ダウンロード fallback: 複数個を順にダウンロード
+    photos.forEach((blob,i)=>{
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'photo_'+i+'.jpg';
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(url), 100);
+    });
   }
 });
 
