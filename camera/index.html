@@ -287,7 +287,7 @@ captureBtn.addEventListener('click', ()=>{
   }, 'image/jpeg');
 });
 
-// ギャラリー表示
+// --- ギャラリー表示 ---
 galleryBtn.addEventListener('click', () => {
   galleryImages.innerHTML = '';
   photos.forEach((blob, i) => {
@@ -306,23 +306,36 @@ galleryBtn.addEventListener('click', () => {
     shareBtn.style.pointerEvents = 'auto';
     shareBtn.style.zIndex = 1002;
 
-    // イベント登録
+    // --- イベント登録 ---
     const handler = (e) => {
       e.stopPropagation(); e.preventDefault();
-      if (navigator.canShare && navigator.canShare({ files: [blob] })) {
-        navigator.share({ files: [blob], title: '写真共有' })
-          .catch(err => console.log(err));
-      } else {
-        // 非対応はダウンロード
-        const a = document.createElement('a');
-        a.href = img.src;
-        a.download = 'photo_' + i + '.jpg';
-        a.click();
-      }
+      const doShareOrDownload = async () => {
+        try {
+          if (navigator.canShare && navigator.canShare({ files: [blob] })) {
+            await navigator.share({ files: [blob], title: '写真共有' });
+          } else {
+            const a = document.createElement('a');
+            a.href = img.src;
+            a.download = 'photo_' + i + '.jpg';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+          }
+        } catch(err){
+          const a = document.createElement('a');
+          a.href = img.src;
+          a.download = 'photo_' + i + '.jpg';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        }
+      };
+      doShareOrDownload();
     };
 
     shareBtn.addEventListener('click', handler);
     shareBtn.addEventListener('touchend', handler);
+    shareBtn.addEventListener('pointerdown', handler);
 
     item.appendChild(shareBtn);
     galleryImages.appendChild(item);
@@ -335,27 +348,45 @@ galleryBtn.addEventListener('click', () => {
 // --- ギャラリー閉じる ---
 closeGalleryBtn.addEventListener('click', () => { galleryOverlay.style.display = 'none'; });
 closeGalleryBtn.addEventListener('touchend', () => { galleryOverlay.style.display = 'none'; });
+closeGalleryBtn.addEventListener('pointerdown', () => { galleryOverlay.style.display = 'none'; });
 
 // --- まとめて共有 ---
 shareAllBtn.addEventListener('click', async ()=>{
   if(photos.length === 0) return;
 
-  if(navigator.canShare && navigator.canShare({ files: photos })){
-    try{
-      await navigator.share({ files: photos, title: 'まとめて写真共有' });
-    }catch(err){ console.log(err); }
-  } else {
-    // ダウンロード fallback: 複数個を順にダウンロード
-    photos.forEach((blob,i)=>{
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'photo_'+i+'.jpg';
-      a.click();
-      setTimeout(()=>URL.revokeObjectURL(url), 100);
-    });
-  }
+  const doShareAll = async () => {
+    try {
+      if(navigator.canShare && navigator.canShare({ files: photos })){
+        await navigator.share({ files: photos, title: 'まとめて写真共有' });
+      } else {
+        photos.forEach((blob,i)=>{
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'photo_'+i+'.jpg';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(()=>URL.revokeObjectURL(url), 100);
+        });
+      }
+    } catch(err){
+      photos.forEach((blob,i)=>{
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'photo_'+i+'.jpg';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url), 100);
+      });
+    }
+  };
+
+  doShareAll();
 });
+
 
 // --- タップでフォーカス ---
 video.addEventListener('click', async e=>{
