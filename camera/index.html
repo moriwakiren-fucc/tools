@@ -296,23 +296,6 @@ galleryBtn.addEventListener('click', ()=>{
     item.style.position='relative';
     item.style.pointerEvents='auto';
 
-    const img=document.createElement('img');
-    img.src=URL.createObjectURL(blob);
-    item.appendChild(img);
-
-    const file = new File([blob], `photo_${i}.jpg`, {type:'image/jpeg'});
-    const shareBtn=document.createElement('button');
-    shareBtn.textContent='共有';
-    shareBtn.className='shareBtn';
-
-galleryBtn.addEventListener('click', ()=>{
-  galleryImages.innerHTML='';
-  photos.forEach((blob,i)=>{
-    const item=document.createElement('div');
-    item.className='galleryItem';
-    item.style.position='relative';
-    item.style.pointerEvents='auto';
-
     // 写真は必ず表示
     const img=document.createElement('img');
     img.src=URL.createObjectURL(blob);
