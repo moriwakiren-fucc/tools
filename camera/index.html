@@ -6,7 +6,7 @@
 <style>
 html, body {
   margin: 0; height: 100%; overflow: hidden; background: black; font-family: sans-serif;
-  touch-action: none; /* ピンチ拡大防止 */
+  touch-action: none;
 }
 video, img#preview {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -131,7 +131,7 @@ captureBtn.addEventListener('click', async ()=>{
   preview.style.display='block';
   video.style.display='none';
 
-  await new Promise(resolve=>setTimeout(resolve,500));
+  await new Promise(resolve=>setTimeout(resolve,250)); // ← ここを0.25秒に変更
 
   preview.style.display='none';
   video.style.display='block';
