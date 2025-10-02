@@ -293,7 +293,7 @@ galleryBtn.addEventListener('click', () => {
   photos.forEach((blob, i) => {
     const item = document.createElement('div');
     item.className = 'galleryItem';
-    item.style.position = 'relative'; 
+    item.style.position = 'relative';
     item.style.pointerEvents = 'auto';
 
     const img = document.createElement('img');
@@ -306,18 +306,21 @@ galleryBtn.addEventListener('click', () => {
     shareBtn.style.pointerEvents = 'auto';
     shareBtn.style.zIndex = 1002;
 
-    // click と touchend の両方で反応させる
-    const handler = async () => {
+    // イベント登録
+    const handler = (e) => {
+      e.stopPropagation(); e.preventDefault();
       if (navigator.canShare && navigator.canShare({ files: [blob] })) {
-        try { await navigator.share({ files: [blob], title: '写真共有' }); } 
-        catch(e){ console.log(e); }
+        navigator.share({ files: [blob], title: '写真共有' })
+          .catch(err => console.log(err));
       } else {
+        // 非対応はダウンロード
         const a = document.createElement('a');
         a.href = img.src;
         a.download = 'photo_' + i + '.jpg';
         a.click();
       }
     };
+
     shareBtn.addEventListener('click', handler);
     shareBtn.addEventListener('touchend', handler);
 
@@ -325,11 +328,9 @@ galleryBtn.addEventListener('click', () => {
     galleryImages.appendChild(item);
   });
 
-  // overlay の表示
   galleryOverlay.style.display = 'flex';
   galleryOverlay.style.pointerEvents = 'auto';
 });
-
 
 // --- ギャラリー閉じる ---
 closeGalleryBtn.addEventListener('click', () => { galleryOverlay.style.display = 'none'; });
