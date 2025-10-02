@@ -351,42 +351,48 @@ closeGalleryBtn.addEventListener('touchend', () => { galleryOverlay.style.displa
 closeGalleryBtn.addEventListener('pointerdown', () => { galleryOverlay.style.display = 'none'; });
 
 // --- まとめて共有 ---
-shareAllBtn.addEventListener('click', async ()=>{
-  if(photos.length === 0) return;
+shareAllBtn.addEventListener('click', async () => {
+  if (photos.length === 0) return;
 
   const doShareAll = async () => {
     try {
-      if(navigator.canShare && navigator.canShare({ files: photos })){
-        await navigator.share({ files: photos, title: 'まとめて写真共有' });
+      // 複数ファイル共有が可能か判定
+      if (navigator.canShare && navigator.canShare({ files: photos })) {
+        await navigator.share({
+          files: photos,
+          title: 'まとめて写真共有'
+        });
       } else {
-        photos.forEach((blob,i)=>{
+        // フォールバック：1枚ずつダウンロード
+        photos.forEach((blob, i) => {
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = 'photo_'+i+'.jpg';
+          a.download = `photo_${i}.jpg`;
           document.body.appendChild(a);
           a.click();
           a.remove();
-          setTimeout(()=>URL.revokeObjectURL(url), 100);
+          setTimeout(() => URL.revokeObjectURL(url), 100);
         });
       }
-    } catch(err){
-      photos.forEach((blob,i)=>{
+    } catch (err) {
+      console.log('シェアエラー、ダウンロードに切り替えます', err);
+      // エラー時もフォールバック
+      photos.forEach((blob, i) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'photo_'+i+'.jpg';
+        a.download = `photo_${i}.jpg`;
         document.body.appendChild(a);
         a.click();
         a.remove();
-        setTimeout(()=>URL.revokeObjectURL(url), 100);
+        setTimeout(() => URL.revokeObjectURL(url), 100);
       });
     }
   };
 
   doShareAll();
 });
-
 
 // --- タップでフォーカス ---
 video.addEventListener('click', async e=>{
