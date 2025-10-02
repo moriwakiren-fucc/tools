@@ -115,19 +115,19 @@ video.addEventListener('touchend', e=>{ if(e.touches.length<2) startPinchDist=nu
 switchCamBtn.addEventListener('click', ()=>{ currentFacingMode=currentFacingMode==='environment'?'user':'environment'; initCamera(currentFacingMode); });
 initCamera(currentFacingMode);
 
-// --- 撮影（画面を0.25秒停止） ---
+// --- 撮影（画面停止→再生再開→保存） ---
 captureBtn.addEventListener('click', async ()=>{
   if(isCapturing) return;
   isCapturing=true;
 
+  video.pause();                       // 映像を0.25秒停止
+  await new Promise(resolve=>setTimeout(resolve,250));
+  video.play();                        // 映像再開
+
+  // 画像保存は非同期で行う
   const canvas=document.createElement('canvas'); canvas.width=video.videoWidth; canvas.height=video.videoHeight;
   canvas.getContext('2d').drawImage(video,0,0);
-  const blob = await new Promise(resolve => canvas.toBlob(resolve,'image/jpeg'));
-  photos.push(blob);
-
-  video.pause();  // 映像を一時停止
-  await new Promise(resolve=>setTimeout(resolve,250)); // 0.25秒停止
-  video.play();   // 映像再開
+  canvas.toBlob(blob=>photos.push(blob),'image/jpeg');
 
   isCapturing=false;
 });
@@ -169,7 +169,6 @@ shareAllBtn.addEventListener('click', async ()=>{
   if(navigator.canShare && navigator.canShare({files})){
     try{ await navigator.share({files, title:'まとめて写真共有'}); }catch(err){ console.log('まとめて共有エラー',err);}
   }else{
-    // フォールバック: 1枚ずつダウンロード
     files.forEach((file,i)=>{
       const a=document.createElement('a'); a.href=URL.createObjectURL(file); a.download=`photo_${i}.jpg`; a.click();
       setTimeout(()=>URL.revokeObjectURL(a.href),100);
