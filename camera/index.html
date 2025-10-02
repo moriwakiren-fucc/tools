@@ -152,16 +152,26 @@ video.addEventListener('touchend', e=>{ if(e.touches.length<2) startPinchDist=nu
 switchCamBtn.addEventListener('click', ()=>{ currentFacingMode=currentFacingMode==='environment'?'user':'environment'; initCamera(currentFacingMode); });
 initCamera(currentFacingMode);
 
-// --- 撮影 ---
+let isPreviewing = false; // 追加
+
 captureBtn.addEventListener('click', ()=>{
-  const canvas=document.createElement('canvas'); canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+  if(isPreviewing) return; // 既に表示中なら無視
+  isPreviewing = true;
+
+  const canvas=document.createElement('canvas'); 
+  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
   canvas.getContext('2d').drawImage(video,0,0);
+
   canvas.toBlob(blob=>{
     photos.push(blob);
     preview.src=URL.createObjectURL(blob);
-    preview.style.display='block'; video.style.display='none';
+    preview.style.display='block'; 
+    video.style.display='none';
+
     setTimeout(()=>{
-      preview.style.display='none'; video.style.display='block';
+      preview.style.display='none'; 
+      video.style.display='block';
+      isPreviewing = false; // フラグ解除
     }, 500);
   }, 'image/jpeg');
 });
