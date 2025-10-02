@@ -6,63 +6,28 @@
 <style>
 html, body {
   margin: 0; height: 100%; overflow: hidden; background: black; font-family: sans-serif;
-  touch-action: none;
+  touch-action: none; /* ピンチ拡大防止 */
 }
 video, img#preview {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   object-fit: cover; background: black;
 }
 img#preview { display: none; z-index: 2; }
-
-.controls {
-  position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; justify-content: center; gap: 40px; z-index: 10;
-}
-
-#switchCam {
-  position: absolute; bottom: 120px; left: 20px; font-size: 1.4em; color: white;
-  background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px; border: none; z-index: 10;
-}
-
-#zoomSlider {
-  position: absolute; bottom: 200px; left: 50%; transform: translateX(-50%);
-  width: 200px; z-index: 10;
-}
-
-#zoomValue {
-  position: absolute; bottom: 230px; left: 50%; transform: translateX(-50%);
-  color: white; z-index: 10;
-}
-
-#galleryBtn {
-  position: absolute; bottom: 40px; left: 20px;
-  background: rgba(0,0,0,0.3); color: white; padding: 10px 14px; border-radius: 8px; border: none; z-index: 20; pointer-events: auto;
-}
-
-.galleryOverlay {
-  position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); display:none;
-  flex-direction: column; overflow-y:auto; z-index:1000; padding:20px; align-items:center;
-}
-
-.galleryHeader {
-  width:100%; display:flex; justify-content:flex-end; gap:10px; margin-bottom:10px; position:relative; z-index:1001;
-}
-
-.galleryHeader button {
-  padding:8px 12px; border-radius:6px; border:none; background:rgba(255,255,255,0.2);
-  color:white; font-size:1em; cursor:pointer; pointer-events:auto; z-index:1002;
-}
-
-.galleryImages { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; width:100%; }
-.galleryItem { position:relative; z-index:1001; pointer-events:auto; }
-.galleryItem img { max-width:45%; border:2px solid white; border-radius:8px; display:block; }
-.shareBtn, .downloadBtn {
-  position:absolute; top:5px; right:5px; background: rgba(0,0,0,0.5); color:white;
-  padding:4px 6px; border-radius:4px; font-size:0.9em; cursor:pointer; pointer-events:auto; z-index:1002;
-}
-.downloadBtn { top:30px; } /* 共有ボタンの下に表示 */
-
+.controls { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; justify-content: center; gap: 40px; z-index: 10; }
+#switchCam { position: absolute; bottom: 120px; left: 20px; font-size: 1.4em; color: white; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px; border: none; z-index: 10; }
+#zoomSlider { position: absolute; bottom: 200px; left: 50%; transform: translateX(-50%); width: 200px; z-index: 10; }
+#zoomValue { position: absolute; bottom: 230px; left: 50%; transform: translateX(-50%); color: white; z-index: 10; }
+#galleryBtn { position: absolute; bottom: 40px; left: 20px; background: rgba(0,0,0,0.3); color: white; padding: 10px 14px; border-radius: 8px; border: none; z-index: 20; pointer-events: auto; }
 .shutter { width:80px; height:80px; border:4px solid white; border-radius:50%; background: rgba(255,255,255,0.8); }
 .focus-ring { position:absolute; border:2px solid yellow; border-radius:50%; width:80px; height:80px; pointer-events:none; display:none; z-index:12; }
+.galleryOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); display:none; flex-direction: column; overflow-y:auto; z-index:1000; padding:20px; align-items:center; }
+.galleryHeader { width:100%; display:flex; justify-content:flex-end; gap:10px; margin-bottom:10px; }
+.galleryHeader button { padding:8px 12px; border-radius:6px; border:none; background:rgba(255,255,255,0.2); color:white; font-size:1em; cursor:pointer; }
+.galleryImages { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; width:100%; }
+.galleryItem { position:relative; }
+.galleryItem img { max-width:45%; border:2px solid white; border-radius:8px; display:block; }
+.shareBtn, .downloadBtn { position:absolute; top:5px; right:5px; background: rgba(0,0,0,0.5); color:white; padding:4px 6px; border-radius:4px; font-size:0.9em; cursor:pointer; }
+.downloadBtn { top:30px; }
 </style>
 </head>
 <body>
@@ -101,7 +66,7 @@ const galleryImages = document.getElementById('galleryImages');
 const closeGalleryBtn = document.getElementById('closeGalleryBtn');
 const focusRing = document.getElementById('focusRing');
 
-let currentFacingMode='environment', stream=null, track=null, photos=[], startPinchDist=null, startZoom=1;
+let currentFacingMode='environment', stream=null, track=null, photos=[], startPinchDist=null, startZoom=1, isCapturing=false;
 
 // --- カメラ初期化 ---
 async function initCamera(facingMode='environment'){
@@ -123,7 +88,6 @@ function setupZoomSlider(){
     zoomSlider.style.display='block'; zoomValue.textContent=zoomSlider.value+'x';
   } else { zoomSlider.style.display='none'; zoomValue.style.display='none'; }
 }
-
 zoomSlider.addEventListener('input', async ()=>{
   const z=parseFloat(zoomSlider.value);
   zoomValue.textContent=z.toFixed(1)+'x';
@@ -152,28 +116,28 @@ video.addEventListener('touchend', e=>{ if(e.touches.length<2) startPinchDist=nu
 switchCamBtn.addEventListener('click', ()=>{ currentFacingMode=currentFacingMode==='environment'?'user':'environment'; initCamera(currentFacingMode); });
 initCamera(currentFacingMode);
 
-let isPreviewing = false; // 追加
+// --- 撮影 ---
+captureBtn.addEventListener('click', async ()=>{
+  if(isCapturing) return;
+  isCapturing=true;
 
-captureBtn.addEventListener('click', ()=>{
-  if(isPreviewing) return; // 既に表示中なら無視
-  isPreviewing = true;
-
-  const canvas=document.createElement('canvas'); 
-  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+  const canvas=document.createElement('canvas'); canvas.width=video.videoWidth; canvas.height=video.videoHeight;
   canvas.getContext('2d').drawImage(video,0,0);
+  const blob = await new Promise(resolve => canvas.toBlob(resolve,'image/jpeg'));
+  photos.push(blob);
 
-  canvas.toBlob(blob=>{
-    photos.push(blob);
-    preview.src=URL.createObjectURL(blob);
-    preview.style.display='block'; 
-    video.style.display='none';
+  const prevUrl = preview.src;
+  preview.src = URL.createObjectURL(blob);
+  preview.style.display='block';
+  video.style.display='none';
 
-    setTimeout(()=>{
-      preview.style.display='none'; 
-      video.style.display='block';
-      isPreviewing = false; // フラグ解除
-    }, 500);
-  }, 'image/jpeg');
+  await new Promise(resolve=>setTimeout(resolve,500));
+
+  preview.style.display='none';
+  video.style.display='block';
+
+  if(prevUrl) URL.revokeObjectURL(prevUrl);
+  isCapturing=false;
 });
 
 // --- ギャラリー ---
@@ -188,41 +152,23 @@ galleryBtn.addEventListener('click', ()=>{
       e.stopPropagation(); e.preventDefault();
       const file=new File([blob], `photo_${i}.jpg`, {type:'image/jpeg'});
       if(navigator.canShare && navigator.canShare({files:[file]})){
-        try{ await navigator.share({files:[file], title:'写真共有'}); return; }
-        catch(err){ console.log('共有エラー', err); }
+        try{ await navigator.share({files:[file], title:'写真共有'}); }catch(err){ console.log('共有エラー',err);}
       }
-      alert('共有できません'); 
     });
 
     const downloadBtn=document.createElement('button'); downloadBtn.textContent='ダウンロード'; downloadBtn.className='downloadBtn';
-    downloadBtn.addEventListener('click', ()=>{
-      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`photo_${i}.jpg`; a.click();
+    downloadBtn.addEventListener('click', e=>{
+      const a=document.createElement('a'); a.href=img.src; a.download=`photo_${i}.jpg`; a.click();
     });
 
     item.appendChild(shareBtn); item.appendChild(downloadBtn);
     galleryImages.appendChild(item);
   });
-  galleryOverlay.style.display='flex'; galleryOverlay.style.pointerEvents='auto';
+  galleryOverlay.style.display='flex';
 });
 
 // --- ギャラリー閉じる ---
-[closeGalleryBtn,'touchend','pointerdown'].forEach(ev=> closeGalleryBtn.addEventListener(ev, ()=>{ galleryOverlay.style.display='none'; }));
-
-// --- タップフォーカス ---
-video.addEventListener('click', async e=>{
-  if(!track) return;
-  const rect=video.getBoundingClientRect();
-  const x=(e.clientX-rect.left)/rect.width;
-  const y=(e.clientY-rect.top)/rect.height;
-  focusRing.style.left=`${e.clientX-40}px`; focusRing.style.top=`${e.clientY-40}px`; focusRing.style.display='block';
-  setTimeout(()=>focusRing.style.display='none',800);
-
-  const caps=track.getCapabilities(); const constraints={};
-  if(caps.focusMode && caps.focusMode.includes('single-shot')) constraints.advanced=[{focusMode:'single-shot'}];
-  if(caps.exposureMode && caps.exposureMode.includes('continuous')){ constraints.advanced=constraints.advanced||[]; constraints.advanced.push({exposureMode:'continuous'}); }
-  if(caps.pointsOfInterest){ constraints.advanced=constraints.advanced||[]; constraints.advanced.push({pointsOfInterest:[{x,y}]}); }
-  try{ await track.applyConstraints(constraints); } catch(err){ console.log(err); }
-});
+closeGalleryBtn.addEventListener('click', ()=>{ galleryOverlay.style.display='none'; });
 </script>
 </body>
 </html>
