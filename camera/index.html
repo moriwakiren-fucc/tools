@@ -2,140 +2,26 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
 <style>
-html, body {
-  margin: 0; height: 100%; overflow: hidden; background: black; font-family: sans-serif;
-  touch-action: none; /* ピンチによるブラウザ拡大防止 */
-}
-
-video, img#preview {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  object-fit: cover; background: black;
-}
-
-img#preview { display: none; z-index: 2; }
-
-.controls {
-  position: absolute; bottom: 40px; left: 0; width: 100%;
-  display: flex; justify-content: center; align-items: center;
-  gap: 40px; z-index: 10;  /* シャッターボタンも最前面 */
-}
-
-#switchCam {
-  position: absolute; bottom: 120px; left: 20px;
-  font-size: 1.4em; color: white;
-  background: rgba(0,0,0,0.3); padding: 8px 12px;
-  border-radius: 8px; border: none; z-index: 10;
-}
-
-#zoomSlider {
-  position: absolute; bottom: 200px; left: 50%; transform: translateX(-50%);
-  width: 200px; z-index: 10;
-}
-
-#zoomValue {
-  position: absolute; bottom: 230px; left: 50%; transform: translateX(-50%);
-  color: white; z-index: 10;
-}
-
-#aspectBtn {
-  position: absolute; top: 20px; right: 20px;
-  background: rgba(0,0,0,0.3); color: white;
-  padding: 8px 12px; border-radius: 8px; border: none;
-  z-index: 10;
-}
-
-#galleryBtn {
-  position: absolute;
-  bottom: 40px; left: 20px;
-  background: rgba(0,0,0,0.3);
-  color: white;
-  padding: 10px 14px;
-  border-radius: 8px;
-  border: none;
-  z-index: 20;          /* 最前面に */
-  pointer-events: auto;  /* クリック有効 */
-}
-
-.galleryOverlay {
-  position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.95);
-  display: none;
-  flex-direction: column;
-  overflow-y: auto;
-  z-index: 1000;        /* 最前面 */
-  padding: 20px;
-  align-items: center;
-}
-
-.galleryHeader {
-  width: 100%;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-bottom: 10px;
-  position: relative;    /* クリックを通す */
-  z-index: 1001;
-}
-
-.galleryHeader button {
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: none;
-  background: rgba(255,255,255,0.2);
-  color: white;
-  font-size: 1em;
-  cursor: pointer;
-  pointer-events: auto;
-  z-index: 1002;
-}
-
-.galleryImages {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
-}
-
-.galleryItem {
-  position: relative;
-  z-index: 1001;
-  pointer-events: auto;
-}
-
-.galleryItem img {
-  max-width: 45%;
-  border: 2px solid white;
-  border-radius: 8px;
-  display: block;
-}
-
-.shareBtn {
-  position: absolute;
-  top: 5px; right: 5px;
-  background: rgba(0,0,0,0.5);
-  color: white;
-  padding: 4px 6px;
-  border-radius: 4px;
-  font-size: 0.9em;
-  cursor: pointer;
-  pointer-events: auto;
-  z-index: 1002;
-}
-
-.shutter {
-  width: 80px; height: 80px;
-  border: 4px solid white; border-radius: 50%;
-  background: rgba(255,255,255,0.8);
-}
-
-.focus-ring {
-  position: absolute; border: 2px solid yellow; border-radius: 50%;
-  width: 80px; height: 80px; pointer-events: none; display: none; z-index: 12;
-}
+html,body{margin:0;height:100%;overflow:hidden;background:black;font-family:sans-serif;touch-action:none}
+video,img#preview{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;background:black}
+img#preview{display:none;z-index:2}
+.controls{position:absolute;bottom:40px;left:0;width:100%;display:flex;justify-content:center;align-items:center;gap:40px;z-index:10}
+#switchCam{position:absolute;bottom:120px;left:20px;font-size:1.4em;color:white;background:rgba(0,0,0,0.3);padding:8px 12px;border-radius:8px;border:none;z-index:10}
+#zoomSlider{position:absolute;bottom:200px;left:50%;transform:translateX(-50%);width:200px;z-index:10}
+#zoomValue{position:absolute;bottom:230px;left:50%;transform:translateX(-50%);color:white;z-index:10}
+#aspectBtn{position:absolute;top:20px;right:20px;background:rgba(0,0,0,0.3);color:white;padding:8px 12px;border-radius:8px;border:none;z-index:10}
+#galleryBtn{position:absolute;bottom:40px;left:20px;background:rgba(0,0,0,0.3);color:white;padding:10px 14px;border-radius:8px;border:none;z-index:20;pointer-events:auto}
+.galleryOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);display:none;flex-direction:column;overflow-y:auto;z-index:1000;padding:20px;align-items:center}
+.galleryHeader{width:100%;display:flex;justify-content:flex-end;gap:10px;margin-bottom:10px;z-index:1001}
+.galleryHeader button{padding:8px 12px;border-radius:6px;border:none;background:rgba(255,255,255,0.2);color:white;font-size:1em;cursor:pointer}
+.galleryImages{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;width:100%}
+.galleryItem{position:relative}
+.galleryItem img{max-width:45%;border:2px solid white;border-radius:8px;display:block}
+.shareBtn{position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.5);color:white;padding:4px 6px;border-radius:4px;font-size:0.9em;cursor:pointer}
+.shutter{width:80px;height:80px;border:4px solid white;border-radius:50%;background:rgba(255,255,255,0.8)}
+.focus-ring{position:absolute;border:2px solid yellow;border-radius:50%;width:80px;height:80px;pointer-events:none;display:none;z-index:12}
 </style>
 </head>
 <body>
@@ -164,266 +50,208 @@ img#preview { display: none; z-index: 2; }
 </div>
 
 <script>
-const video = document.getElementById('camera');
-const preview = document.getElementById('preview');
-const captureBtn = document.getElementById('captureBtn');
-const switchCamBtn = document.getElementById('switchCam');
-const zoomSlider = document.getElementById('zoomSlider');
-const zoomValue = document.getElementById('zoomValue');
-const galleryBtn = document.getElementById('galleryBtn');
-const aspectBtn = document.getElementById('aspectBtn');
-const galleryOverlay = document.getElementById('galleryOverlay');
-const galleryImages = document.getElementById('galleryImages');
-const closeGalleryBtn = document.getElementById('closeGalleryBtn');
-const shareAllBtn = document.getElementById('shareAllBtn');
-const focusRing = document.getElementById('focusRing');
+const video=document.getElementById('camera');
+const preview=document.getElementById('preview');
+const captureBtn=document.getElementById('captureBtn');
+const switchCamBtn=document.getElementById('switchCam');
+const zoomSlider=document.getElementById('zoomSlider');
+const zoomValue=document.getElementById('zoomValue');
+const galleryBtn=document.getElementById('galleryBtn');
+const aspectBtn=document.getElementById('aspectBtn');
+const galleryOverlay=document.getElementById('galleryOverlay');
+const galleryImages=document.getElementById('galleryImages');
+const closeGalleryBtn=document.getElementById('closeGalleryBtn');
+const shareAllBtn=document.getElementById('shareAllBtn');
+const focusRing=document.getElementById('focusRing');
 
-let currentFacingMode = 'environment';
-let stream = null;
-let track = null;
-let photos = [];
-let startPinchDist = null;
-let startZoom = 1;
-let currentAspect = 'fill';
+let currentFacingMode='environment';
+let stream=null;
+let track=null;
+let photos=[];
+let startPinchDist=null;
+let startZoom=1;
+let currentAspect='fill';
 
-// --- カメラ初期化 ---
-async function initCamera(facingMode = 'environment') {
-  if (stream) stream.getTracks().forEach(t=>t.stop());
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
-    video.srcObject = stream;
-    track = stream.getVideoTracks()[0];
+// カメラ初期化
+async function initCamera(facingMode='environment'){
+  if(stream) stream.getTracks().forEach(t=>t.stop());
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode}});
+    video.srcObject=stream;
+    track=stream.getVideoTracks()[0];
     setupZoomSlider();
-  } catch(err) { alert('カメラを利用できません: '+err.message); }
+  }catch(e){alert('カメラを利用できません: '+e.message);}
 }
 
-// --- ズーム対応 ---
-function setupZoomSlider() {
-  const caps = track.getCapabilities();
-  if (caps.zoom) {
-    zoomSlider.min = caps.zoom.min;
-    zoomSlider.max = caps.zoom.max;
-    zoomSlider.step = caps.zoom.step || 0.1;
-    zoomSlider.value = track.getSettings().zoom || caps.zoom.min;
-    zoomSlider.style.display = 'block';
-    zoomValue.textContent = zoomSlider.value+'x';
-  } else {
-    zoomSlider.style.display = 'none';
-    zoomValue.style.display = 'none';
+function setupZoomSlider(){
+  const caps=track.getCapabilities();
+  if(caps.zoom){
+    zoomSlider.min=caps.zoom.min;
+    zoomSlider.max=caps.zoom.max;
+    zoomSlider.step=caps.zoom.step||0.1;
+    zoomSlider.value=track.getSettings().zoom||caps.zoom.min;
+    zoomSlider.style.display='block';
+    zoomValue.textContent=zoomSlider.value+'x';
+  }else{
+    zoomSlider.style.display='none';
+    zoomValue.style.display='none';
   }
 }
 
-// --- スライダーリアルタイム反映 ---
-zoomSlider.addEventListener('input', async () => {
-  const z = parseFloat(zoomSlider.value);
-  zoomValue.textContent = z.toFixed(1)+'x';
-  if(track){
-    try { await track.applyConstraints({ advanced:[{zoom:z}] }); } catch(e){ console.log(e); }
-  }
+zoomSlider.addEventListener('input',async()=>{
+  const z=parseFloat(zoomSlider.value);
+  zoomValue.textContent=z.toFixed(1)+'x';
+  if(track) try{await track.applyConstraints({advanced:[{zoom:z}]});}catch(e){console.log(e);}
 });
 
-// --- ピンチズーム ---
-video.addEventListener('touchstart', e => {
-  if(e.touches.length === 2){
+// ピンチズーム
+video.addEventListener('touchstart',e=>{
+  if(e.touches.length===2){
     e.preventDefault();
-    startPinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX,
-                                e.touches[0].clientY - e.touches[1].clientY);
-    startZoom = parseFloat(zoomSlider.value);
+    startPinchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,
+                              e.touches[0].clientY-e.touches[1].clientY);
+    startZoom=parseFloat(zoomSlider.value);
   }
 });
-video.addEventListener('touchmove', e => {
-  if(e.touches.length === 2 && startPinchDist && track){
+video.addEventListener('touchmove',e=>{
+  if(e.touches.length===2 && startPinchDist && track){
     e.preventDefault();
-    const newDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX,
-                               e.touches[0].clientY - e.touches[1].clientY);
-    let scale = newDist/startPinchDist;
-    let z = Math.min(Math.max(startZoom*scale, zoomSlider.min), zoomSlider.max);
-    zoomSlider.value = z.toFixed(2);
-    zoomValue.textContent = z.toFixed(1)+'x';
-    try { track.applyConstraints({ advanced:[{zoom:z}] }); } catch(e){ console.log(e); }
+    const newDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,
+                              e.touches[0].clientY-e.touches[1].clientY);
+    let scale=newDist/startPinchDist;
+    let z=Math.min(Math.max(startZoom*scale,zoomSlider.min),zoomSlider.max);
+    zoomSlider.value=z.toFixed(2);
+    zoomValue.textContent=z.toFixed(1)+'x';
+    try{track.applyConstraints({advanced:[{zoom:z}]});}catch(e){console.log(e);}
   }
 });
-video.addEventListener('touchend', e => { if(e.touches.length<2) startPinchDist=null; });
+video.addEventListener('touchend',e=>{if(e.touches.length<2) startPinchDist=null;});
 
-// --- カメラ切替 ---
-switchCamBtn.addEventListener('click', ()=>{
-  currentFacingMode = currentFacingMode==='environment'?'user':'environment';
+// カメラ切替
+switchCamBtn.addEventListener('click',()=>{
+  currentFacingMode=currentFacingMode==='environment'?'user':'environment';
   initCamera(currentFacingMode);
 });
 
 initCamera(currentFacingMode);
 
-// --- アスペクト比切替 ---
-aspectBtn.addEventListener('click', ()=>{
+// アスペクト比切替
+aspectBtn.addEventListener('click',()=>{
   if(currentAspect==='fill'){
     video.style.objectFit='contain';
     video.style.aspectRatio='4/3';
-    currentAspect='4:3'; aspectBtn.textContent='4:3';
-  } else if(currentAspect==='4:3'){
+    currentAspect='4:3';aspectBtn.textContent='4:3';
+  }else if(currentAspect==='4:3'){
     video.style.objectFit='contain';
     video.style.aspectRatio='1/1';
-    currentAspect='1:1'; aspectBtn.textContent='1:1';
-  } else {
+    currentAspect='1:1';aspectBtn.textContent='1:1';
+  }else{
     video.style.objectFit='cover';
     video.style.aspectRatio='auto';
-    currentAspect='fill'; aspectBtn.textContent='フル';
+    currentAspect='fill';aspectBtn.textContent='フル';
   }
 });
 
-// --- 撮影 ---
-captureBtn.addEventListener('click', ()=>{
+// 撮影
+captureBtn.addEventListener('click',()=>{
   const canvas=document.createElement('canvas');
-  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+  canvas.width=video.videoWidth;canvas.height=video.videoHeight;
   canvas.getContext('2d').drawImage(video,0,0);
   canvas.toBlob(blob=>{
     photos.push(blob);
     preview.src=URL.createObjectURL(blob);
-    preview.style.display='block'; 
+    preview.style.display='block';
     video.style.display='none';
-    setTimeout(()=>{
-      preview.style.display='none'; 
-      video.style.display='block';
-    }, 500);
-  }, 'image/jpeg');
+    setTimeout(()=>{preview.style.display='none';video.style.display='block';},500);
+  },'image/jpeg');
 });
 
-// --- ギャラリー表示 ---
-galleryBtn.addEventListener('click', () => {
-  galleryImages.innerHTML = '';
-  photos.forEach((blob, i) => {
-    const item = document.createElement('div');
-    item.className = 'galleryItem';
-    item.style.position = 'relative';
-    item.style.pointerEvents = 'auto';
+// ギャラリー表示
+galleryBtn.addEventListener('click',()=>{
+  galleryImages.innerHTML='';
+  photos.forEach((blob,i)=>{
+    const item=document.createElement('div');
+    item.className='galleryItem';
 
-    const img = document.createElement('img');
-    img.src = URL.createObjectURL(blob);
+    const img=document.createElement('img');
+    img.src=URL.createObjectURL(blob);
     item.appendChild(img);
 
-    const shareBtn = document.createElement('button');
-    shareBtn.textContent = '共有';
-    shareBtn.className = 'shareBtn';
-    shareBtn.style.pointerEvents = 'auto';
-    shareBtn.style.zIndex = 1002;
+    const btn=document.createElement('button');
+    btn.textContent='共有';
+    btn.className='shareBtn';
 
-    // --- イベント登録 ---
-    const handler = (e) => {
-      e.stopPropagation(); e.preventDefault();
-      const doShareOrDownload = async () => {
-        try {
-          if (navigator.canShare && navigator.canShare({ files: [blob] })) {
-          const file = new File([blob], `photo_${i}.jpg`, { type: 'image/jpeg' });
-
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({
-              title: '写真共有',
-              files: [file]
-            });
-          } else {
-            // フォールバック：ダウンロード
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `photo_${i}.jpg`;
-            a.click();
-          }
-        } catch(err){
-          const a = document.createElement('a');
-          a.href = img.src;
-          a.download = 'photo_' + i + '.jpg';
-          document.body.appendChild(a);
+    btn.addEventListener('click',async e=>{
+      e.stopPropagation();e.preventDefault();
+      const file=new File([blob],`photo_${i}.jpg`,{type:'image/jpeg'});
+      try{
+        if(navigator.canShare && navigator.canShare({files:[file]})){
+          await navigator.share({files:[file],title:'写真共有'});
+        }else{
+          const a=document.createElement('a');
+          a.href=URL.createObjectURL(blob);
+          a.download=`photo_${i}.jpg`;
           a.click();
-          a.remove();
         }
-      };
-      doShareOrDownload();
-    };
+      }catch(err){
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(blob);
+        a.download=`photo_${i}.jpg`;
+        a.click();
+      }
+    });
 
-    shareBtn.addEventListener('click', handler);
-    shareBtn.addEventListener('touchend', handler);
-    shareBtn.addEventListener('pointerdown', handler);
-
-    item.appendChild(shareBtn);
+    item.appendChild(btn);
     galleryImages.appendChild(item);
   });
-
-  galleryOverlay.style.display = 'flex';
-  galleryOverlay.style.pointerEvents = 'auto';
+  galleryOverlay.style.display='flex';
 });
 
-// --- ギャラリー閉じる ---
-closeGalleryBtn.addEventListener('click', () => { galleryOverlay.style.display = 'none'; });
-closeGalleryBtn.addEventListener('touchend', () => { galleryOverlay.style.display = 'none'; });
-closeGalleryBtn.addEventListener('pointerdown', () => { galleryOverlay.style.display = 'none'; });
+// ギャラリー閉じる
+closeGalleryBtn.addEventListener('click',()=>{galleryOverlay.style.display='none';});
 
-// --- まとめて共有 ---
-shareAllBtn.addEventListener('click', async () => {
-  if (photos.length === 0) return;
-
-  const doShareAll = async () => {
-    try {
-      // 複数ファイル共有が可能か判定
-      if (navigator.canShare && navigator.canShare({ files: photos })) {
-        await navigator.share({
-          files: photos,
-          title: 'まとめて写真共有'
-        });
-      } else {
-        // フォールバック：1枚ずつダウンロード
-        photos.forEach((blob, i) => {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `photo_${i}.jpg`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          setTimeout(() => URL.revokeObjectURL(url), 100);
-        });
-      }
-    } catch (err) {
-      console.log('シェアエラー、ダウンロードに切り替えます', err);
-      // エラー時もフォールバック
-      photos.forEach((blob, i) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `photo_${i}.jpg`;
-        document.body.appendChild(a);
+// まとめて共有
+shareAllBtn.addEventListener('click',async()=>{
+  if(photos.length===0)return;
+  const files=photos.map((b,i)=>new File([b],`photo_${i}.jpg`,{type:'image/jpeg'}));
+  try{
+    if(navigator.canShare && navigator.canShare({files})){
+      await navigator.share({files,title:'まとめて写真共有'});
+    }else{
+      files.forEach((f,i)=>{
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(f);
+        a.download=`photo_${i}.jpg`;
         a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 100);
       });
     }
-  };
-
-  doShareAll();
+  }catch(err){
+    files.forEach((f,i)=>{
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(f);
+      a.download=`photo_${i}.jpg`;
+      a.click();
+    });
+  }
 });
 
-// --- タップでフォーカス ---
-video.addEventListener('click', async e=>{
-  if(!track) return;
+// タップでフォーカス
+video.addEventListener('click',async e=>{
+  if(!track)return;
   const rect=video.getBoundingClientRect();
   const x=(e.clientX-rect.left)/rect.width;
   const y=(e.clientY-rect.top)/rect.height;
-
   focusRing.style.left=`${e.clientX-40}px`;
   focusRing.style.top=`${e.clientY-40}px`;
   focusRing.style.display='block';
   setTimeout(()=>focusRing.style.display='none',800);
 
   const caps=track.getCapabilities();
-  const constraints={};
-  if(caps.focusMode && caps.focusMode.includes('single-shot')) constraints.advanced=[{focusMode:'single-shot'}];
-  if(caps.exposureMode && caps.exposureMode.includes('continuous')){
-    if(!constraints.advanced) constraints.advanced=[];
-    constraints.advanced.push({exposureMode:'continuous'});
-  }
-  if(caps.pointsOfInterest){
-    if(!constraints.advanced) constraints.advanced=[];
-    constraints.advanced.push({pointsOfInterest:[{x,y}]});
-  }
-
-  try{ await track.applyConstraints(constraints); } catch(err){ console.log(err); }
+  const cons={advanced:[]};
+  if(caps.focusMode?.includes('single-shot'))cons.advanced.push({focusMode:'single-shot'});
+  if(caps.exposureMode?.includes('continuous'))cons.advanced.push({exposureMode:'continuous'});
+  if(caps.pointsOfInterest)cons.advanced.push({pointsOfInterest:[{x,y}]});
+  try{await track.applyConstraints(cons);}catch(err){console.log(err);}
 });
 </script>
 </body>
