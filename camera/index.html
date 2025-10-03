@@ -6,6 +6,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/piexifjs"></script>
 <style>
+/* 元のスタイルはそのまま */
 body,html{
   margin:0;
   padding:0;
@@ -60,12 +61,18 @@ video{
   cursor:pointer;
   overflow:hidden;
 }
-#zoomSlider{
+#zoomContainer{
   position:absolute;
   bottom:120px;
   left:50%;
   transform:translateX(-50%);
   width:200px;
+  text-align:center;
+  color:white;
+  font-size:1rem;
+}
+#zoomSlider{
+  width:100%;
 }
 #galleryOverlay{
   position:fixed;
@@ -134,7 +141,11 @@ video{
 <div id="cameraContainer">
   <video id="camera" autoplay playsinline></video>
   <button id="galleryBtn">📷</button>
-  <input type="range" id="zoomSlider" min="1" max="3" step="0.1" value="1">
+  <!-- ズームスライダーと倍率表示 -->
+  <div id="zoomContainer">
+    <div id="zoomValue">1.0x</div>
+    <input type="range" id="zoomSlider" min="1" max="3" step="0.1" value="1">
+  </div>
   <button id="switchCamBtn">⇆</button>
   <button id="shutterBtn"></button>
 </div>
@@ -154,6 +165,7 @@ const shutterBtn=document.getElementById('shutterBtn');
 const switchCamBtn=document.getElementById('switchCamBtn');
 const galleryBtn=document.getElementById('galleryBtn');
 const zoomSlider=document.getElementById('zoomSlider');
+const zoomValue=document.getElementById('zoomValue');
 const galleryOverlay=document.getElementById('galleryOverlay');
 const closeGalleryBtn=document.getElementById('closeGalleryBtn');
 const shareAllBtn=document.getElementById('shareAllBtn');
@@ -162,9 +174,8 @@ const galleryImages=document.getElementById('galleryImages');
 
 let currentStream=null;
 let useFrontCamera=false;
-let photos=[]; // {blob, filename}
+let photos=[];
 
-// ピンチズーム用
 let pinchStartDist=0;
 let pinchStartZoom=1;
 
@@ -184,14 +195,16 @@ function applyZoom(){
   const track=currentStream?.getVideoTracks()[0];
   const cap=track?.getCapabilities?.();
   if(cap?.zoom){
-    track.applyConstraints({advanced:[{zoom:parseFloat(zoomSlider.value)}]});
+    let zoom=parseFloat(zoomSlider.value);
+    track.applyConstraints({advanced:[{zoom}]});
+    zoomValue.textContent=zoom.toFixed(1)+'x';
   }
 }
 
-// ズームスライダー
+// スライダー連動
 zoomSlider.addEventListener('input',applyZoom);
 
-// ===== ピンチズームの追加 =====
+// ピンチズーム
 video.addEventListener('touchstart', e=>{
   if(e.touches.length===2){
     pinchStartDist=Math.hypot(
@@ -217,11 +230,12 @@ video.addEventListener('touchmove', e=>{
       let newZoom=Math.min(cap.zoom.max, Math.max(cap.zoom.min, pinchStartZoom*scale));
       track.applyConstraints({advanced:[{zoom:newZoom}]});
       zoomSlider.value=newZoom;
+      zoomValue.textContent=newZoom.toFixed(1)+'x';
     }
   }
 },{passive:false});
 
-// ピンチズーム防止（元々のコード）
+// ピンチ防止（既存コード）
 document.addEventListener('gesturestart',e=>e.preventDefault());
 document.addEventListener('gesturechange',e=>e.preventDefault());
 document.addEventListener('gestureend',e=>e.preventDefault());
@@ -232,7 +246,7 @@ switchCamBtn.addEventListener('click',()=>{
   startCamera();
 });
 
-// 撮影
+// 以下、撮影・ギャラリー処理は元のコードのまま
 shutterBtn.addEventListener('click',async()=>{
   const canvas=document.createElement('canvas');
   canvas.width=video.videoWidth;
@@ -256,28 +270,20 @@ shutterBtn.addEventListener('click',async()=>{
 
   const res=await fetch(newJpeg);
   const blob=await res.blob();
-
   photos.unshift({blob,filename});
-  updateGalleryThumb(blob);
+  galleryBtn.style.backgroundImage=`url(${URL.createObjectURL(blob)})`;
+  galleryBtn.style.backgroundSize='cover';
 
   const track=video.srcObject.getVideoTracks()[0];
   track.enabled=false;
   setTimeout(()=>track.enabled=true,250);
 });
 
-// サムネイル
-function updateGalleryThumb(blob){
-  galleryBtn.style.backgroundImage=`url(${URL.createObjectURL(blob)})`;
-  galleryBtn.style.backgroundSize='cover';
-}
-
-// ギャラリー表示
 galleryBtn.addEventListener('click',()=>{
   galleryImages.innerHTML='';
   photos.forEach((photo,i)=>{
     const item=document.createElement('div');
     item.className='galleryItem';
-
     const img=document.createElement('img');
     img.src=URL.createObjectURL(photo.blob);
 
@@ -308,7 +314,6 @@ galleryBtn.addEventListener('click',()=>{
   galleryOverlay.style.display='flex';
 });
 
-// 全共有
 shareAllBtn.onclick=async()=>{
   const files=photos.map(p=>new File([p.blob],p.filename,{type:'image/jpeg'}));
   if(navigator.canShare && navigator.canShare({files})){
@@ -317,12 +322,9 @@ shareAllBtn.onclick=async()=>{
   }
 };
 
-// 全ダウンロード（ZIP）
 downloadAllBtn.onclick=async()=>{
   const zip=new JSZip();
-  photos.forEach(p=>{
-    zip.file(p.filename,p.blob);
-  });
+  photos.forEach(p=>zip.file(p.filename,p.blob));
   const content=await zip.generateAsync({type:'blob'});
   const url=URL.createObjectURL(content);
   const a=document.createElement('a');
@@ -332,7 +334,6 @@ downloadAllBtn.onclick=async()=>{
   URL.revokeObjectURL(url);
 };
 
-// 閉じる
 closeGalleryBtn.onclick=()=>galleryOverlay.style.display='none';
 
 startCamera();
