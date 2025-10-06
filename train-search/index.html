@@ -6,7 +6,7 @@
 <title>駅時刻検索</title>
 <style>
   body { font-family: sans-serif; margin: 20px; }
-  input { margin: 5px; padding: 5px; }
+  select, input, button { margin: 5px; padding: 5px; }
   table { border-collapse: collapse; margin-top: 15px; width: 100%; max-width: 500px; }
   th, td { border: 1px solid #333; padding: 6px; text-align: center; }
 </style>
@@ -14,7 +14,19 @@
 <body>
 
 <h2>駅時刻検索</h2>
-<input type="text" id="stationInput" placeholder="駅名を入力">
+
+<!-- 路線選択 -->
+<select id="lineSelect">
+  <option value="CSV_db/CSV_1_NPHs-NBR_db.csv">日豊本線 上り</option>
+  <option value="CSV_db/CSV_2_NPHs-KDR_db.csv">日豊本線 下り</option>
+  <option value="CSV_db/CSV_3_NPHs-NBR_db.csv">久大本線 上り</option>
+  <option value="CSV_db/CSV_4_NPHs-KDR_db.csv">久大本線 下り</option>
+  <option value="CSV_db/CSV_5_NPHs-NBR_db.csv">豊肥本線 上り</option>
+  <option value="CSV_db/CSV_6_NPHs-KDR_db.csv">豊肥本線 下り</option>
+</select>
+
+<!-- 駅名と時刻 -->
+<input type="text" id="stationInput" placeholder="駅名を入力" value="大分">
 <input type="time" id="timeInput">
 <button onclick="searchSchedule()">検索</button>
 
@@ -23,14 +35,34 @@
 <script>
 let csvData = [];
 
-// CSV読み込み
-fetch('CSV_db/CSV_1_NPHs-NBR_db.csv')
-  .then(res => res.text())
-  .then(text => {
-    csvData = text.trim().split('\n').map(row => row.split(','));
-  })
-  .catch(err => console.error('CSV読み込みエラー:', err));
+// ページ読み込み時に初期設定
+window.addEventListener('DOMContentLoaded', () => {
+  // 現在時刻をtimeInputにセット
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  document.getElementById('timeInput').value = `${hh}:${mm}`;
 
+  // 初期路線のCSVを読み込み
+  loadCSV(document.getElementById('lineSelect').value);
+});
+
+// 路線が変更されたらCSVを再読み込み
+document.getElementById('lineSelect').addEventListener('change', (e) => {
+  loadCSV(e.target.value);
+});
+
+function loadCSV(path) {
+  fetch(path)
+    .then(res => res.text())
+    .then(text => {
+      csvData = text.trim().split('\n').map(row => row.split(','));
+      console.log('CSV読み込み完了:', path);
+    })
+    .catch(err => console.error('CSV読み込みエラー:', err));
+}
+
+// 時刻を分に変換
 function timeToMinutes(t) {
   const [h, m] = t.split(':').map(Number);
   return h * 60 + m;
@@ -82,7 +114,7 @@ function searchSchedule() {
   const table = document.createElement('table');
 
   // 1,2,3,5行目と該当駅行を両方の候補で表示
-  const displayRows = [0,1,2,4,rowIndex]; // 0-based index
+  const displayRows = [0,1,2,4,rowIndex]; // 0-based index (1行目,2行目,3行目,5行目,駅行)
 
   displayRows.forEach(rIdx => {
     const tr = document.createElement('tr');
