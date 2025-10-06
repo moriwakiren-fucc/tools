@@ -18,12 +18,12 @@
     font-size: 14px;
   }
   table {
-    border-collapse: separate;      /* セルの隙間を許可 */
-    border-spacing: 20px 8px;       /* 横方向に20px、縦方向に8pxの間隔を設定 */
+    border-collapse: separate;       /* セル間の隙間を作る */
+    border-spacing: 20px 8px;        /* 横方向20px、縦方向8px */
     margin-top: 20px;
   }
   td {
-    border: none;                   /* 枠線を削除 */
+    border: none;                    /* 枠線なし */
     padding: 4px 8px;
     text-align: center;
   }
@@ -129,23 +129,32 @@ document.getElementById('searchBtn').addEventListener('click', () => {
     return;
   }
 
-  // 表示用データを構築
+  // 表示用データを構築（行列入れ替え）
   const c1 = nextTimes[0].col;
   const c2 = nextTimes[1].col;
 
   let html = "<table>";
 
-  // 上部に両候補の1,2,3,5行目を表示
-  [1,2,3,5].forEach(r => {
-    html += "<tr>";
-    html += `<td>${csvData[r-1][c1] || ''}</td>`;
-    html += `<td>${csvData[r-1][c2] || ''}</td>`;
-    html += "</tr>";
-  });
-
-  // 検索駅の行の候補1と候補2
+  // 1行目にラベル（1,2,3,5行目＋検索駅行）
   html += "<tr>";
+  [1,2,3,5,'駅'].forEach(label => {
+    html += `<td>${label === '駅' ? station : label + '行目'}</td>`;
+  });
+  html += "</tr>";
+
+  // 候補1の行
+  html += "<tr>";
+  [1,2,3,5].forEach(r => {
+    html += `<td>${csvData[r-1][c1] || ''}</td>`;
+  });
   html += `<td>${csvData[targetRowIndex][c1] || ''}</td>`;
+  html += "</tr>";
+
+  // 候補2の行
+  html += "<tr>";
+  [1,2,3,5].forEach(r => {
+    html += `<td>${csvData[r-1][c2] || ''}</td>`;
+  });
   html += `<td>${csvData[targetRowIndex][c2] || ''}</td>`;
   html += "</tr>";
 
