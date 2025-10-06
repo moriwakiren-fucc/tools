@@ -56,7 +56,7 @@
 
     // ページを開いた時にPQR.csvを読み込む
     window.addEventListener('DOMContentLoaded', () => {
-      fetch('CSV_db/CSV_1_NPHs-NBR_db.csv.csv')
+      fetch('CSV_db/CSV_1_NPHs-NBR_db.csv')
         .then(response => {
           if (!response.ok) throw new Error('CSVを読み込めません');
           return response.text();
