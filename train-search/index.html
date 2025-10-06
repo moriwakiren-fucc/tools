@@ -27,9 +27,6 @@
     padding: 4px 8px;
     text-align: center;
   }
-  tr.header-row td {
-    font-weight: bold;
-  }
 </style>
 </head>
 <body>
@@ -58,6 +55,9 @@
 
 <script>
 let csvData = [];
+
+// 🔹 ここで候補数を指定
+const CANDIDATE_COUNT = 2; // 例: 2 → 候補1,2 / 3 → 候補1,2,3
 
 // ページ読み込み時に現在時刻を初期値に設定
 window.addEventListener('DOMContentLoaded', () => {
@@ -111,7 +111,7 @@ document.getElementById('searchBtn').addEventListener('click', () => {
   const row = csvData[targetRowIndex];
   const inputMin = timeToMinutes(inputTime);
 
-  // 指定時刻以降の最初の時刻と次の時刻を探す
+  // 指定時刻以降の候補を取得
   let nextTimes = [];
   for (let c = 1; c < row.length; c++) {
     const t = row[c];
@@ -119,40 +119,29 @@ document.getElementById('searchBtn').addEventListener('click', () => {
       const tm = timeToMinutes(t);
       if (tm >= inputMin) {
         nextTimes.push({col: c, time: t});
-        if (nextTimes.length === 2) break;
+        if (nextTimes.length >= CANDIDATE_COUNT) break;
       }
     }
   }
 
-  if (nextTimes.length < 2) {
+  if (nextTimes.length === 0) {
     document.getElementById('result').innerHTML = "<p>該当する候補が見つかりません。</p>";
     return;
   }
 
-  // 表示用データを構築（行列入れ替え）
-  const c1 = nextTimes[0].col;
-  const c2 = nextTimes[1].col;
-
+  // 表を作成（行: 候補、列: 1,2,3,5行目＋検索駅行）
   let html = "<table>";
 
-  // 候補1の行
-  html += "<tr>";
-  [1,2,3,5].forEach(r => {
-    html += `<td>${csvData[r-1][c1] || ''}</td>`;
+  nextTimes.forEach(candidate => {
+    html += "<tr>";
+    [1,2,3,5].forEach(r => {
+      html += `<td>${csvData[r-1][candidate.col] || ''}</td>`;
+    });
+    html += `<td>${csvData[targetRowIndex][candidate.col] || ''}</td>`;
+    html += "</tr>";
   });
-  html += `<td>${csvData[targetRowIndex][c1] || ''}</td>`;
-  html += "</tr>";
-
-  // 候補2の行
-  html += "<tr>";
-  [1,2,3,5].forEach(r => {
-    html += `<td>${csvData[r-1][c2] || ''}</td>`;
-  });
-  html += `<td>${csvData[targetRowIndex][c2] || ''}</td>`;
-  html += "</tr>";
 
   html += "</table>";
-
   document.getElementById('result').innerHTML = html;
 });
 </script>
