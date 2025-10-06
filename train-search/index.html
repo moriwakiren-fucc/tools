@@ -18,15 +18,12 @@
     table {
       border-collapse: collapse;
       margin-top: 20px;
-      width: 300px;
+      width: 250px;
     }
-    th, td {
+    td {
       border: 1px solid #ccc;
       padding: 5px 10px;
       text-align: center;
-    }
-    th {
-      background-color: #f0f0f0;
     }
     #resultTable {
       display: none;
@@ -41,19 +38,13 @@
   <button id="searchBtn">検索</button>
 
   <table id="resultTable">
-    <thead>
-      <tr>
-        <th>候補1</th>
-        <th>候補2</th>
-      </tr>
-    </thead>
     <tbody id="resultBody"></tbody>
   </table>
 
   <script>
     let csvData = [];
 
-    // ページを開いた時にCSVを読み込む
+    // ページ読み込み時にCSVを取得
     window.addEventListener('DOMContentLoaded', () => {
       fetch('CSV_db/CSV_1_NPHs-NBR_db.csv')
         .then(response => {
@@ -90,7 +81,7 @@
         return;
       }
 
-      // 駅名 + " 発" の行番号を取得
+      // 駅名 + " 発" の行を探す
       const targetRowIndex = csvData.findIndex(row => row[0] === station + ' 発');
       if (targetRowIndex === -1) {
         alert('該当する駅が見つかりません');
@@ -102,19 +93,19 @@
 
       // B列以降から指定時刻以降の最初の2つを探す
       const times = row.slice(1);
-      let firstTime = null;
-      let secondTime = null;
+      let firstCol = -1;
+      let secondCol = -1;
 
       for (let i = 0; i < times.length; i++) {
         const t = times[i].trim();
         if (!/^\d{2}:\d{2}$/.test(t)) continue;
         if (toMinutes(t) >= timeMinutes) {
-          firstTime = t;
-          // 次の便を探す
+          firstCol = i + 1; // B列は1なので+1
+          // 次の便
           for (let j = i + 1; j < times.length; j++) {
             const t2 = times[j].trim();
             if (/^\d{2}:\d{2}$/.test(t2)) {
-              secondTime = t2;
+              secondCol = j + 1;
               break;
             }
           }
@@ -122,18 +113,27 @@
         }
       }
 
-      if (!firstTime || !secondTime) {
+      if (firstCol === -1 || secondCol === -1) {
         alert('指定時刻以降の便が見つかりません');
         return;
       }
 
-      // テーブルに表示
+      // 表示するデータを組み立て
       const tableBody = document.getElementById('resultBody');
       tableBody.innerHTML = '';
 
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${firstTime}</td><td>${secondTime}</td>`;
-      tableBody.appendChild(tr);
+      // 選んだ列の1,2,3,5行目を先に表示
+      const headerRows = [0, 1, 2, 4]; // 配列は0始まりなので5行目はインデックス4
+      headerRows.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${csvData[r][firstCol]}</td>`;
+        tableBody.appendChild(tr);
+      });
+
+      // 候補1と候補2を下に表示（横並び）
+      const trCandidates = document.createElement('tr');
+      trCandidates.innerHTML = `<td>${csvData[targetRowIndex][firstCol]}</td><td>${csvData[targetRowIndex][secondCol]}</td>`;
+      tableBody.appendChild(trCandidates);
 
       document.getElementById('resultTable').style.display = 'table';
     });
