@@ -18,12 +18,12 @@
     font-size: 14px;
   }
   table {
-    border-collapse: separate;       /* セル間の隙間を作る */
-    border-spacing: 20px 8px;        /* 横方向20px、縦方向8px */
+    border-collapse: separate;
+    border-spacing: 20px 8px;
     margin-top: 20px;
   }
   td {
-    border: none;                    /* 枠線なし */
+    border: none;
     padding: 4px 8px;
     text-align: center;
   }
@@ -35,16 +35,16 @@
 
 <label for="lineSelect">路線:</label>
 <select id="lineSelect">
-  <option value="CSV_db/CSV_1_NPHs-NBR_db.csv">日豊本線 上り</option>
+  <option value="CSV_db/CSV_1_NPHs-NBR_db.csv" selected>日豊本線 上り</option>
   <option value="CSV_db/CSV_2_NPHs-KDR_db.csv">日豊本線 下り</option>
   <option value="CSV_db/CSV_3_KDHs-NBR_db.csv">久大本線 上り</option>
-  <option value="CSV_db/CSV_4_KDHs-KDR_db.csv" selected>久大本線 下り</option>
+  <option value="CSV_db/CSV_4_KDHs-KDR_db.csv">久大本線 下り</option>
   <option value="CSV_db/CSV_5_HHHs-NBR_db.csv">豊肥本線 上り</option>
   <option value="CSV_db/CSV_6_HHHs-KDR_db.csv">豊肥本線 下り</option>
 </select>
 
 <label for="stationInput">駅名:</label>
-<input type="text" id="stationInput" value="古国府">
+<input type="text" id="stationInput" value="大分">
 
 <label for="timeInput">時刻:</label>
 <input type="time" id="timeInput">
@@ -56,8 +56,8 @@
 <script>
 let csvData = [];
 
-// 🔹 ここで候補数を指定
-const CANDIDATE_COUNT = 5; // 例: 2 → 候補1,2 / 3 → 候補1,2,3
+// 🔹 候補数を変更可能
+const CANDIDATE_COUNT = 2; // 例: 2 → 候補1,2 / 3 → 候補1,2,3
 
 // ページ読み込み時に現在時刻を初期値に設定
 window.addEventListener('DOMContentLoaded', () => {
@@ -111,18 +111,20 @@ document.getElementById('searchBtn').addEventListener('click', () => {
   const row = csvData[targetRowIndex];
   const inputMin = timeToMinutes(inputTime);
 
-  // 指定時刻以降の候補を取得
-  let nextTimes = [];
+  // 🔹 入力時刻以降の時刻を取得して時刻順にソート
+  let allTimes = [];
   for (let c = 1; c < row.length; c++) {
     const t = row[c];
     if (t && /^\d{1,2}:\d{2}$/.test(t)) {
       const tm = timeToMinutes(t);
       if (tm >= inputMin) {
-        nextTimes.push({col: c, time: t});
-        if (nextTimes.length >= CANDIDATE_COUNT) break;
+        allTimes.push({col: c, time: t, minutes: tm});
       }
     }
   }
+  allTimes.sort((a,b) => a.minutes - b.minutes);
+
+  const nextTimes = allTimes.slice(0, CANDIDATE_COUNT);
 
   if (nextTimes.length === 0) {
     document.getElementById('result').innerHTML = "<p>該当する候補が見つかりません。</p>";
