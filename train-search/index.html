@@ -3,64 +3,87 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>駅時刻検索</title>
+<title>列車時刻検索</title>
 <style>
-  body { font-family: sans-serif; margin: 20px; }
-  select, input, button { margin: 5px; padding: 5px; }
-  table { border-collapse: collapse; margin-top: 15px; width: auto; }
-  th, td { border: 1px solid #333; padding: 6px; text-align: center; }
+  body {
+    font-family: sans-serif;
+    margin: 20px;
+  }
+  label {
+    margin-right: 5px;
+  }
+  input, select, button {
+    margin: 5px;
+    padding: 4px 8px;
+    font-size: 14px;
+  }
+  table {
+    border-collapse: separate;      /* セルの隙間を許可 */
+    border-spacing: 20px 8px;       /* 横方向に20px、縦方向に8pxの間隔を設定 */
+    margin-top: 20px;
+  }
+  td {
+    border: none;                   /* 枠線を削除 */
+    padding: 4px 8px;
+    text-align: center;
+  }
+  tr.header-row td {
+    font-weight: bold;
+  }
 </style>
 </head>
 <body>
 
-<h2>駅時刻検索</h2>
+<h2>列車時刻検索</h2>
 
-<!-- 路線選択 -->
+<label for="lineSelect">路線:</label>
 <select id="lineSelect">
   <option value="CSV_db/CSV_1_NPHs-NBR_db.csv">日豊本線 上り</option>
   <option value="CSV_db/CSV_2_NPHs-KDR_db.csv">日豊本線 下り</option>
-  <option value="CSV_db/CSV_3_KDHs-NBR_db.csv">久大本線 上り</option>
-  <option value="CSV_db/CSV_4_KDHs-KDR_db.csv">久大本線 下り</option>
-  <option value="CSV_db/CSV_5_KDHs-NBR_db.csv">豊肥本線 上り</option>
-  <option value="CSV_db/CSV_6_KDHs-KDR_db.csv">豊肥本線 下り</option>
+  <option value="CSV_db/CSV_3_NPHs-NBR_db.csv">久大本線 上り</option>
+  <option value="CSV_db/CSV_4_NPHs-KDR_db.csv">久大本線 下り</option>
+  <option value="CSV_db/CSV_5_NPHs-NBR_db.csv">豊肥本線 上り</option>
+  <option value="CSV_db/CSV_6_NPHs-KDR_db.csv">豊肥本線 下り</option>
 </select>
 
-<!-- 駅名と時刻 -->
-<input type="text" id="stationInput" placeholder="駅名を入力" value="大分">
+<label for="stationInput">駅名:</label>
+<input type="text" id="stationInput" value="大分">
+
+<label for="timeInput">時刻:</label>
 <input type="time" id="timeInput">
-<button onclick="searchSchedule()">検索</button>
+
+<button id="searchBtn">検索</button>
 
 <div id="result"></div>
 
 <script>
 let csvData = [];
-const CANDIDATE_COUNT = 2; // ★候補の本数をここで指定（例: 3にすると候補3本表示）
 
-// ページ読み込み時に初期設定
+// ページ読み込み時に現在時刻を初期値に設定
 window.addEventListener('DOMContentLoaded', () => {
-  // 現在時刻をtimeInputにセット
   const now = new Date();
   const hh = String(now.getHours()).padStart(2, '0');
   const mm = String(now.getMinutes()).padStart(2, '0');
   document.getElementById('timeInput').value = `${hh}:${mm}`;
 
-  // 初期路線のCSVを読み込み
   loadCSV(document.getElementById('lineSelect').value);
 });
 
-// 路線が変更されたらCSVを再読み込み
+// 路線選択時にCSVを再ロード
 document.getElementById('lineSelect').addEventListener('change', (e) => {
   loadCSV(e.target.value);
 });
 
-function loadCSV(path) {
-  fetch(path)
-    .then(res => res.text())
-    .then(text => {
-      csvData = text.trim().split('\n').map(row => row.split(','));
-      console.log('CSV読み込み完了:', path);
-    })
-    .catch(err => console.error('CSV読み込みエラー:', err));
+// CSVを取得
+async function loadCSV(path) {
+  try {
+    const res = await fetch(path);
+    const text = await res.text();
+    csvData = text.trim().split('\n').map(row => row.split(','));
+  } catch (err) {
+    console.error('CSV読み込みエラー:', err);
+    csvData = [];
+  }
 }
 
 // 時刻を分に変換
@@ -69,73 +92,67 @@ function timeToMinutes(t) {
   return h * 60 + m;
 }
 
-function searchSchedule() {
+// 検索処理
+document.getElementById('searchBtn').addEventListener('click', () => {
   const station = document.getElementById('stationInput').value.trim();
   const inputTime = document.getElementById('timeInput').value;
-  const resultDiv = document.getElementById('result');
-  resultDiv.innerHTML = '';
 
-  if (!station || !inputTime) {
-    resultDiv.textContent = '駅名と時刻を入力してください';
+  if (!station || !inputTime || csvData.length === 0) {
+    document.getElementById('result').innerHTML = "<p>データが不足しています。</p>";
     return;
   }
 
-  // 駅名 + 発 を含む行を探す
-  const rowIndex = csvData.findIndex(row => row[0] === station + ' 発');
-  if (rowIndex === -1) {
-    resultDiv.textContent = '該当する駅が見つかりません';
+  const targetRowIndex = csvData.findIndex(row => row[0] === station + " 発");
+  if (targetRowIndex === -1) {
+    document.getElementById('result').innerHTML = "<p>該当する駅が見つかりません。</p>";
     return;
   }
 
-  // 入力時刻以降の便を取得
+  const row = csvData[targetRowIndex];
   const inputMin = timeToMinutes(inputTime);
-  const candidates = [];
 
-  for (let c = 1; c < csvData[rowIndex].length; c++) {
-    const t = csvData[rowIndex][c];
+  // 指定時刻以降の最初の時刻と次の時刻を探す
+  let nextTimes = [];
+  for (let c = 1; c < row.length; c++) {
+    const t = row[c];
     if (t && /^\d{1,2}:\d{2}$/.test(t)) {
-      const tMin = timeToMinutes(t);
-      if (tMin >= inputMin) {
-        candidates.push({ col: c, time: t });
-        if (candidates.length >= CANDIDATE_COUNT) break;
+      const tm = timeToMinutes(t);
+      if (tm >= inputMin) {
+        nextTimes.push({col: c, time: t});
+        if (nextTimes.length === 2) break;
       }
     }
   }
 
-  if (candidates.length === 0) {
-    resultDiv.textContent = '入力した時刻以降の便が見つかりません';
+  if (nextTimes.length < 2) {
+    document.getElementById('result').innerHTML = "<p>該当する候補が見つかりません。</p>";
     return;
   }
 
-  // 表を作成（2行×5列）
-  const table = document.createElement('table');
+  // 表示用データを構築
+  const c1 = nextTimes[0].col;
+  const c2 = nextTimes[1].col;
 
-  // 表示する行（1,2,3,5行目と検索駅行）
-  const displayRows = [0,1,2,4,rowIndex];
+  let html = "<table>";
 
-  // 1行目: 見出し（列名代わり）
-  const headerRow = document.createElement('tr');
-  displayRows.forEach(rIdx => {
-    const th = document.createElement('th');
-    // 列名はCSVのA列（駅名や説明）を使う
-    th.textContent = csvData[rIdx][0] || '';
-    headerRow.appendChild(th);
-  });
-  table.appendChild(headerRow);
-
-  // 候補ごとの行を追加
-  candidates.forEach(candidate => {
-    const tr = document.createElement('tr');
-    displayRows.forEach(rIdx => {
-      const td = document.createElement('td');
-      td.textContent = csvData[rIdx][candidate.col] || '';
-      tr.appendChild(td);
-    });
-    table.appendChild(tr);
+  // 上部に両候補の1,2,3,5行目を表示
+  [1,2,3,5].forEach(r => {
+    html += "<tr>";
+    html += `<td>${csvData[r-1][c1] || ''}</td>`;
+    html += `<td>${csvData[r-1][c2] || ''}</td>`;
+    html += "</tr>";
   });
 
-  resultDiv.appendChild(table);
-}
+  // 検索駅の行の候補1と候補2
+  html += "<tr>";
+  html += `<td>${csvData[targetRowIndex][c1] || ''}</td>`;
+  html += `<td>${csvData[targetRowIndex][c2] || ''}</td>`;
+  html += "</tr>";
+
+  html += "</table>";
+
+  document.getElementById('result').innerHTML = html;
+});
 </script>
 
 </body>
