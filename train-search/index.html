@@ -36,8 +36,6 @@
 </head>
 <body>
   <h1>列車時刻検索</h1>
-  <p>ローカルの <strong>PQR.csv</strong> を選択してください。</p>
-  <input type="file" id="csvFile" accept=".csv"><br>
 
   <label>駅名: <input type="text" id="stationInput" placeholder="駅名を入力"></label><br>
   <label>時刻: <input type="text" id="timeInput" placeholder="hh:mm"></label><br>
@@ -56,28 +54,30 @@
   <script>
     let csvData = [];
 
-    // CSVを読み込む
-    document.getElementById('csvFile').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        const text = event.target.result;
-        csvData = text.trim().split('\n').map(line => line.split(','));
-        alert('CSVを読み込みました。');
-      };
-      reader.readAsText(file, 'UTF-8');
+    // ページを開いた時にPQR.csvを読み込む
+    window.addEventListener('DOMContentLoaded', () => {
+      fetch('CSV_db/CSV_1_NPHs-NBR_db.csv.csv')
+        .then(response => {
+          if (!response.ok) throw new Error('CSVを読み込めません');
+          return response.text();
+        })
+        .then(text => {
+          csvData = text.trim().split('\n').map(line => line.split(','));
+          console.log('CSV読み込み完了', csvData);
+        })
+        .catch(err => {
+          alert('CSVの読み込みに失敗しました: ' + err.message);
+        });
     });
 
-    // 時刻を分単位に変換
+    // 時刻を分に変換
     function toMinutes(t) {
       const [h, m] = t.split(':').map(Number);
       return h * 60 + m;
     }
 
     // 検索ボタン
-    document.getElementById('searchBtn').addEventListener('click', function() {
+    document.getElementById('searchBtn').addEventListener('click', () => {
       const station = document.getElementById('stationInput').value.trim();
       const inputTime = document.getElementById('timeInput').value.trim();
 
@@ -87,7 +87,7 @@
       }
 
       if (!csvData.length) {
-        alert('CSVを先に読み込んでください');
+        alert('CSVが読み込まれていません');
         return;
       }
 
@@ -101,17 +101,18 @@
       const timeMinutes = toMinutes(inputTime);
       const row = csvData[targetRowIndex];
 
-      // B列以降から指定時刻より後の最初の2つの時刻を探す
+      // B列以降から指定時刻以降の最初の2つを探す
       const times = row.slice(1);
       let firstIdx = -1, secondIdx = -1;
 
       for (let i = 0; i < times.length; i++) {
         const t = times[i].trim();
         if (!t) continue;
-        const tMin = toMinutes(t);
-        if (tMin >= timeMinutes) {
-          firstIdx = i + 1; // B列以降なので+1
-          break;
+        if (/^\d{2}:\d{2}$/.test(t)) {
+          if (toMinutes(t) >= timeMinutes) {
+            firstIdx = i + 1; // B列はインデックス1なので+1
+            break;
+          }
         }
       }
 
@@ -119,8 +120,10 @@
         for (let j = firstIdx; j < times.length; j++) {
           const t = times[j].trim();
           if (!t) continue;
-          secondIdx = j + 1;
-          if (secondIdx !== firstIdx) break;
+          if (/^\d{2}:\d{2}$/.test(t)) {
+            secondIdx = j + 1;
+            if (secondIdx !== firstIdx) break;
+          }
         }
       }
 
@@ -129,15 +132,15 @@
         return;
       }
 
-      // 表示用データ抽出
+      // 表示データを作成
       const resultRows = [];
 
-      // 1〜5行目
+      // 1〜5行目（ヘッダー情報など）
       for (let r = 0; r < 5; r++) {
         resultRows.push([csvData[r][0], csvData[r][firstIdx]]);
       }
 
-      // 駅の行
+      // 該当する駅の行
       resultRows.push([csvData[targetRowIndex][0], csvData[targetRowIndex][firstIdx]]);
 
       // 表示
