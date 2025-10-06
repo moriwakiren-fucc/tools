@@ -1,142 +1,108 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>時刻検索</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      line-height: 1.6;
-    }
-    input, button {
-      margin: 5px 0;
-      padding: 5px;
-      font-size: 1rem;
-    }
-    table {
-      border-collapse: collapse;
-      margin-top: 20px;
-      width: 250px;
-    }
-    td {
-      border: 1px solid #ccc;
-      padding: 5px 10px;
-      text-align: center;
-    }
-    #resultTable {
-      display: none;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>駅時刻検索</title>
+<style>
+  body { font-family: sans-serif; margin: 20px; }
+  input { margin: 5px; padding: 5px; }
+  table { border-collapse: collapse; margin-top: 15px; width: 100%; max-width: 500px; }
+  th, td { border: 1px solid #333; padding: 6px; text-align: center; }
+</style>
 </head>
 <body>
-  <h1>列車時刻検索</h1>
 
-  <label>駅名: <input type="text" id="stationInput" placeholder="駅名を入力"></label><br>
-  <label>時刻: <input type="text" id="timeInput" placeholder="hh:mm"></label><br>
-  <button id="searchBtn">検索</button>
+<h2>駅時刻検索</h2>
+<input type="text" id="stationInput" placeholder="駅名を入力">
+<input type="time" id="timeInput">
+<button onclick="searchSchedule()">検索</button>
 
-  <table id="resultTable">
-    <tbody id="resultBody"></tbody>
-  </table>
+<div id="result"></div>
 
-  <script>
-    let csvData = [];
+<script>
+let csvData = [];
 
-    // ページ読み込み時にCSVを取得
-    window.addEventListener('DOMContentLoaded', () => {
-      fetch('CSV_db/CSV_1_NPHs-NBR_db.csv')
-        .then(response => {
-          if (!response.ok) throw new Error('CSVを読み込めません');
-          return response.text();
-        })
-        .then(text => {
-          csvData = text.trim().split('\n').map(line => line.split(','));
-          console.log('CSV読み込み完了', csvData);
-        })
-        .catch(err => {
-          alert('CSVの読み込みに失敗しました: ' + err.message);
-        });
-    });
+// CSV読み込み
+fetch('CSV_db/CSV_1_NPHs-NBR_db.csv')
+  .then(res => res.text())
+  .then(text => {
+    csvData = text.trim().split('\n').map(row => row.split(','));
+  })
+  .catch(err => console.error('CSV読み込みエラー:', err));
 
-    // 時刻を分に変換
-    function toMinutes(t) {
-      const [h, m] = t.split(':').map(Number);
-      return h * 60 + m;
-    }
+function timeToMinutes(t) {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
 
-    // 検索ボタン
-    document.getElementById('searchBtn').addEventListener('click', () => {
-      const station = document.getElementById('stationInput').value.trim();
-      const inputTime = document.getElementById('timeInput').value.trim();
+function searchSchedule() {
+  const station = document.getElementById('stationInput').value.trim();
+  const inputTime = document.getElementById('timeInput').value;
+  const resultDiv = document.getElementById('result');
+  resultDiv.innerHTML = '';
 
-      if (!station || !inputTime) {
-        alert('駅名と時刻を入力してください');
-        return;
-      }
+  if (!station || !inputTime) {
+    resultDiv.textContent = '駅名と時刻を入力してください';
+    return;
+  }
 
-      if (!csvData.length) {
-        alert('CSVが読み込まれていません');
-        return;
-      }
+  // 駅名 + 発 を含む行を探す
+  const rowIndex = csvData.findIndex(row => row[0] === station + ' 発');
+  if (rowIndex === -1) {
+    resultDiv.textContent = '該当する駅が見つかりません';
+    return;
+  }
 
-      // 駅名 + " 発" の行を探す
-      const targetRowIndex = csvData.findIndex(row => row[0] === station + ' 発');
-      if (targetRowIndex === -1) {
-        alert('該当する駅が見つかりません');
-        return;
-      }
+  // 入力時刻より後の最も近い時刻と次の時刻を探す
+  const inputMin = timeToMinutes(inputTime);
+  let candidate1 = null, candidate2 = null;
 
-      const timeMinutes = toMinutes(inputTime);
-      const row = csvData[targetRowIndex];
-
-      // B列以降から指定時刻以降の最初の2つを探す
-      const times = row.slice(1);
-      let firstCol = -1;
-      let secondCol = -1;
-
-      for (let i = 0; i < times.length; i++) {
-        const t = times[i].trim();
-        if (!/^\d{2}:\d{2}$/.test(t)) continue;
-        if (toMinutes(t) >= timeMinutes) {
-          firstCol = i + 1; // B列は1なので+1
-          // 次の便
-          for (let j = i + 1; j < times.length; j++) {
-            const t2 = times[j].trim();
-            if (/^\d{2}:\d{2}$/.test(t2)) {
-              secondCol = j + 1;
-              break;
-            }
-          }
+  for (let c = 1; c < csvData[rowIndex].length; c++) {
+    const t = csvData[rowIndex][c];
+    if (t && /^\d{1,2}:\d{2}$/.test(t)) {
+      const tMin = timeToMinutes(t);
+      if (tMin >= inputMin) {
+        if (candidate1 === null) {
+          candidate1 = { col: c, time: t };
+        } else if (candidate2 === null) {
+          candidate2 = { col: c, time: t };
           break;
         }
       }
+    }
+  }
 
-      if (firstCol === -1 || secondCol === -1) {
-        alert('指定時刻以降の便が見つかりません');
-        return;
-      }
+  if (!candidate1) {
+    resultDiv.textContent = '入力した時刻以降の便が見つかりません';
+    return;
+  }
 
-      // 表示するデータを組み立て
-      const tableBody = document.getElementById('resultBody');
-      tableBody.innerHTML = '';
+  // 表を作成
+  const table = document.createElement('table');
 
-      // 選んだ列の1,2,3,5行目を先に表示
-      const headerRows = [0, 1, 2, 4]; // 配列は0始まりなので5行目はインデックス4
-      headerRows.forEach(r => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${csvData[r][firstCol]}</td>`;
-        tableBody.appendChild(tr);
-      });
+  // 1,2,3,5行目と該当駅行を両方の候補で表示
+  const displayRows = [0,1,2,4,rowIndex]; // 0-based index
 
-      // 候補1と候補2を下に表示（横並び）
-      const trCandidates = document.createElement('tr');
-      trCandidates.innerHTML = `<td>${csvData[targetRowIndex][firstCol]}</td><td>${csvData[targetRowIndex][secondCol]}</td>`;
-      tableBody.appendChild(trCandidates);
+  displayRows.forEach(rIdx => {
+    const tr = document.createElement('tr');
 
-      document.getElementById('resultTable').style.display = 'table';
-    });
-  </script>
+    // 候補1の列
+    const td1 = document.createElement('td');
+    td1.textContent = csvData[rIdx][candidate1.col] || '';
+    tr.appendChild(td1);
+
+    // 候補2の列
+    const td2 = document.createElement('td');
+    td2.textContent = candidate2 ? (csvData[rIdx][candidate2.col] || '') : '';
+    tr.appendChild(td2);
+
+    table.appendChild(tr);
+  });
+
+  resultDiv.appendChild(table);
+}
+</script>
+
 </body>
 </html>
