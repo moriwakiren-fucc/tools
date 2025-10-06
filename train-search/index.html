@@ -41,13 +41,13 @@
   <option value="CSV_db/CSV_1_NPHs-NBR_db.csv">日豊本線 上り</option>
   <option value="CSV_db/CSV_2_NPHs-KDR_db.csv">日豊本線 下り</option>
   <option value="CSV_db/CSV_3_NPHs-NBR_db.csv">久大本線 上り</option>
-  <option value="CSV_db/CSV_4_NPHs-KDR_db.csv">久大本線 下り</option>
+  <option value="CSV_db/CSV_4_NPHs-KDR_db.csv" selected>久大本線 下り</option>
   <option value="CSV_db/CSV_5_NPHs-NBR_db.csv">豊肥本線 上り</option>
   <option value="CSV_db/CSV_6_NPHs-KDR_db.csv">豊肥本線 下り</option>
 </select>
 
 <label for="stationInput">駅名:</label>
-<input type="text" id="stationInput" value="大分">
+<input type="text" id="stationInput" value="古国府">
 
 <label for="timeInput">時刻:</label>
 <input type="time" id="timeInput">
@@ -134,13 +134,6 @@ document.getElementById('searchBtn').addEventListener('click', () => {
   const c2 = nextTimes[1].col;
 
   let html = "<table>";
-
-  // 1行目にラベル（1,2,3,5行目＋検索駅行）
-  html += "<tr>";
-  [1,2,3,5,'駅'].forEach(label => {
-    html += `<td>${label === '駅' ? station : label + '行目'}</td>`;
-  });
-  html += "</tr>";
 
   // 候補1の行
   html += "<tr>";
