@@ -7,7 +7,7 @@
 <style>
   body { font-family: sans-serif; margin: 20px; }
   select, input, button { margin: 5px; padding: 5px; }
-  table { border-collapse: collapse; margin-top: 15px; width: 100%; max-width: 500px; }
+  table { border-collapse: collapse; margin-top: 15px; width: auto; }
   th, td { border: 1px solid #333; padding: 6px; text-align: center; }
 </style>
 </head>
@@ -34,6 +34,7 @@
 
 <script>
 let csvData = [];
+const CANDIDATE_COUNT = 2; // ★候補の本数をここで指定（例: 3にすると候補3本表示）
 
 // ページ読み込み時に初期設定
 window.addEventListener('DOMContentLoaded', () => {
@@ -86,49 +87,50 @@ function searchSchedule() {
     return;
   }
 
-  // 入力時刻より後の最も近い時刻と次の時刻を探す
+  // 入力時刻以降の便を取得
   const inputMin = timeToMinutes(inputTime);
-  let candidate1 = null, candidate2 = null;
+  const candidates = [];
 
   for (let c = 1; c < csvData[rowIndex].length; c++) {
     const t = csvData[rowIndex][c];
     if (t && /^\d{1,2}:\d{2}$/.test(t)) {
       const tMin = timeToMinutes(t);
       if (tMin >= inputMin) {
-        if (candidate1 === null) {
-          candidate1 = { col: c, time: t };
-        } else if (candidate2 === null) {
-          candidate2 = { col: c, time: t };
-          break;
-        }
+        candidates.push({ col: c, time: t });
+        if (candidates.length >= CANDIDATE_COUNT) break;
       }
     }
   }
 
-  if (!candidate1) {
+  if (candidates.length === 0) {
     resultDiv.textContent = '入力した時刻以降の便が見つかりません';
     return;
   }
 
-  // 表を作成
+  // 表を作成（2行×5列）
   const table = document.createElement('table');
 
-  // 1,2,3,5行目と該当駅行を両方の候補で表示
-  const displayRows = [0,1,2,4,rowIndex]; // 0-based index (1行目,2行目,3行目,5行目,駅行)
+  // 表示する行（1,2,3,5行目と検索駅行）
+  const displayRows = [0,1,2,4,rowIndex];
 
+  // 1行目: 見出し（列名代わり）
+  const headerRow = document.createElement('tr');
   displayRows.forEach(rIdx => {
+    const th = document.createElement('th');
+    // 列名はCSVのA列（駅名や説明）を使う
+    th.textContent = csvData[rIdx][0] || '';
+    headerRow.appendChild(th);
+  });
+  table.appendChild(headerRow);
+
+  // 候補ごとの行を追加
+  candidates.forEach(candidate => {
     const tr = document.createElement('tr');
-
-    // 候補1の列
-    const td1 = document.createElement('td');
-    td1.textContent = csvData[rIdx][candidate1.col] || '';
-    tr.appendChild(td1);
-
-    // 候補2の列
-    const td2 = document.createElement('td');
-    td2.textContent = candidate2 ? (csvData[rIdx][candidate2.col] || '') : '';
-    tr.appendChild(td2);
-
+    displayRows.forEach(rIdx => {
+      const td = document.createElement('td');
+      td.textContent = csvData[rIdx][candidate.col] || '';
+      tr.appendChild(td);
+    });
     table.appendChild(tr);
   });
 
