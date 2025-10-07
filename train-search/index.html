@@ -12,6 +12,23 @@
   td { padding: 4px 8px; text-align: center; }
   h3 { margin-top: 30px; }
   .search-block { margin-bottom: 30px; }
+
+  /* 横並び用のレイアウト */
+  .results {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;               /* 上りと下りの間隔 */
+    margin-top: 10px;
+  }
+  .result-block {
+    flex: 1 1 300px;         /* 幅が確保できれば横並び */
+    min-width: 300px;        /* 狭いときは自動で縦並び */
+  }
+  @media (max-width: 700px) {
+    .results {
+      flex-direction: column; /* 狭い画面では縦並び */
+    }
+  }
 </style>
 </head>
 <body>
@@ -36,11 +53,15 @@
 
   <button id="searchBtn1">検索</button>
 
-  <div>
-    <h4>上り</h4>
-    <div id="result1_up"></div>
-    <h4>下り</h4>
-    <div id="result1_down"></div>
+  <div class="results">
+    <div class="result-block">
+      <h4>上り</h4>
+      <div id="result1_up"></div>
+    </div>
+    <div class="result-block">
+      <h4>下り</h4>
+      <div id="result1_down"></div>
+    </div>
   </div>
 </div>
 
@@ -62,18 +83,22 @@
 
   <button id="searchBtn2">検索</button>
 
-  <div>
-    <h4>上り</h4>
-    <div id="result2_up"></div>
-    <h4>下り</h4>
-    <div id="result2_down"></div>
+  <div class="results">
+    <div class="result-block">
+      <h4>上り</h4>
+      <div id="result2_up"></div>
+    </div>
+    <div class="result-block">
+      <h4>下り</h4>
+      <div id="result2_down"></div>
+    </div>
   </div>
 </div>
 
 <script>
 const CANDIDATE_COUNT = 5;
 
-// ✅ 路線ごとのCSVパス（上り・下り）
+// ✅ 路線ごとのCSVパス
 const csv_paths = {
   NPH: { up: "CSV_db/CSV_1_NPHs-NBR_db.csv", down: "CSV_db/CSV_2_NPHs-KDR_db.csv" },
   KDH: { up: "CSV_db/CSV_3_KDHs-NBR_db.csv", down: "CSV_db/CSV_4_KDHs-KDR_db.csv" },
