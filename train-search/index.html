@@ -56,17 +56,29 @@
 <script>
 let csvData = [];
 
-// 🔹 候補数を変更可能
-const CANDIDATE_COUNT = 5; // 例: 2 → 候補1,2 / 3 → 候補1,2,3
+// 🔹 候補数
+const CANDIDATE_COUNT = 2;
 
-// ページ読み込み時に現在時刻を初期値に設定
+// ページ読み込み時に初期設定
 window.addEventListener('DOMContentLoaded', () => {
-  const now = new Date();
-  const hh = String(now.getHours()).padStart(2, '0');
-  const mm = String(now.getMinutes()).padStart(2, '0');
-  document.getElementById('timeInput').value = `${hh}:${mm}`;
+  const params = new URLSearchParams(window.location.search);
 
-  loadCSV(document.getElementById('lineSelect').value);
+  // URLから初期値を取得（なければデフォルト値）
+  const lineIdx = parseInt(params.get('line')) || 4;  // デフォルト=4(久大下り)
+  const station = params.get('station') || '古国府';
+
+  const now = new Date();
+  const defaultTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const time = params.get('time') || defaultTime;
+
+  // 取得した値を入力欄に反映
+  document.getElementById('lineSelect').selectedIndex = lineIdx - 1; // lineは1始まり想定
+  document.getElementById('stationInput').value = station;
+  document.getElementById('timeInput').value = time;
+
+  // 初期ロード
+  const csvPath = document.getElementById('lineSelect').value;
+  loadCSV(csvPath);
 });
 
 // 路線選択時にCSVを再ロード
