@@ -97,18 +97,26 @@
 <script>
 const CANDIDATE_COUNT = 5;
 
+// ✅ CSVファイルの一覧を定義
+const csv_paths = [
+  "",  // インデックス1始まりのため空
+  "CSV_db/CSV_1_NPHs-NBR_db.csv", // 1: 日豊本線 上り
+  "CSV_db/CSV_2_NPHs-KDR_db.csv", // 2: 日豊本線 下り
+  "CSV_db/CSV_3_KDHs-NBR_db.csv", // 3: 久大本線 上り
+  "CSV_db/CSV_4_KDHs-KDR_db.csv", // 4: 久大本線 下り
+  "CSV_db/CSV_5_HHHs-NBR_db.csv", // 5: 豊肥本線 上り
+  "CSV_db/CSV_6_HHHs-KDR_db.csv"  // 6: 豊肥本線 下り
+];
+
 // CSVキャッシュ
 const csvCache = {};
 
-// CSVパスを取得
-function getCsvPath(num) {
-  return `CSV_db/CSV_${num}_NPHs-${(num%2===1?'NBR':'KDR')}_db.csv`;
-}
-
-// CSV読み込み
-async function loadCSV(num) {
-  const path = getCsvPath(num);
+// ✅ CSV読み込み
+async function loadCSV(lineNum) {
+  const path = csv_paths[lineNum];
+  if (!path) return [];
   if (csvCache[path]) return csvCache[path];
+
   const res = await fetch(path);
   const text = await res.text();
   csvCache[path] = text.trim().split('\n').map(row => row.split(','));
@@ -121,7 +129,7 @@ function timeToMinutes(t) {
   return h * 60 + m;
 }
 
-// 表を作成
+// ✅ 表を作成
 function buildTable(csvData, station, inputTime) {
   const targetRowIndex = csvData.findIndex(row => row[0] === station + " 発");
   if (targetRowIndex === -1) return "<p>該当する駅が見つかりません。</p>";
@@ -156,7 +164,7 @@ function buildTable(csvData, station, inputTime) {
   return html;
 }
 
-// 検索処理（第1＆第2）
+// ✅ 第1＆第2検索
 async function search12() {
   const line1 = parseInt(document.getElementById('lineSelect1').value);
   const station1 = document.getElementById('stationInput1').value.trim();
@@ -167,6 +175,7 @@ async function search12() {
   localStorage.setItem('line1', line1);
   localStorage.setItem('station1', station1);
 
+  // 上下線切替
   const oppLine = (line1 % 2 === 1) ? line1 + 1 : line1 - 1;
 
   const csv1 = await loadCSV(line1);
@@ -176,7 +185,7 @@ async function search12() {
   document.getElementById('result2').innerHTML = buildTable(csv2, station1, time1);
 }
 
-// 検索処理（第3）
+// ✅ 第3検索
 async function search3() {
   const line3 = parseInt(document.getElementById('lineSelect3').value);
   const station3 = document.getElementById('stationInput3').value.trim();
@@ -191,11 +200,11 @@ async function search3() {
   document.getElementById('result3').innerHTML = buildTable(csv3, station3, time3);
 }
 
-// イベント
+// イベント設定
 document.getElementById('searchBtn12').addEventListener('click', search12);
 document.getElementById('searchBtn3').addEventListener('click', search3);
 
-// 初期値
+// ✅ 初期化（キャッシュ復元）
 window.addEventListener('DOMContentLoaded', () => {
   const now = new Date();
   const defaultTime = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
