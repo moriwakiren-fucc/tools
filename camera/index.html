@@ -53,6 +53,7 @@ video{
   color:white;
   font-size:1rem;
   z-index:10;
+  height: 60px;
 }
 .zoomSlider{
   width:100%;
@@ -85,6 +86,7 @@ video{
   right:120px;
   top:50%;
   transform:translateY(-50%);
+  transform: rotate(-0.25turn);
 }
 #switchCamBtn-right{
   right:180px;
@@ -183,8 +185,8 @@ video{
   <!-- 右 -->
   <button id="shutterBtn-right" class="shutterBtn"></button>
   <div id="zoomContainer-right" class="zoomContainer">
-    <div class="zoomValue" style="transform: rotate(-0.25turn);">1.0x</div>
-    <input type="range" class="zoomSlider" min="1" max="3" step="0.1" value="1" styele="transform: rotate(-0.25turn);">
+    <div class="zoomValue">1.0x</div>
+    <input type="range" class="zoomSlider" min="1" max="3" step="0.1" value="1">
   </div>
   <button id="switchCamBtn-right" class="switchCamBtn">⇆</button>
 </div>
