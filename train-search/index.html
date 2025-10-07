@@ -57,15 +57,15 @@
 let csvData = [];
 
 // 🔹 候補数
-const CANDIDATE_COUNT = 2;
+const CANDIDATE_COUNT = 5;
 
 // ページ読み込み時に初期設定
 window.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
 
   // URLから初期値を取得（なければデフォルト値）
-  const lineIdx = parseInt(params.get('line')) || 4;  // デフォルト=4(久大下り)
-  const station = params.get('station') || '古国府';
+  const lineIdx = parseInt(params.get('line')) || 1;
+  const station = params.get('station') || '大分';
 
   const now = new Date();
   const defaultTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
