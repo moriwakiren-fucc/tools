@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>列車時刻検索（3セット対応）</title>
+<title>列車時刻検索（3表対応）</title>
 <style>
   body {
     font-family: sans-serif;
@@ -17,160 +17,236 @@
     padding: 4px 8px;
     font-size: 14px;
   }
-  .search-block {
-    margin-bottom: 40px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #ccc;
-  }
   table {
     border-collapse: separate;
     border-spacing: 20px 8px;
-    margin-top: 20px;
+    margin: 20px 0;
   }
   td {
     border: none;
     padding: 4px 8px;
     text-align: center;
   }
+  h3 {
+    margin-top: 30px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
+  }
 </style>
 </head>
 <body>
 
-<h2>列車時刻検索（3セット）</h2>
+<h2>列車時刻検索</h2>
 
-<!-- 🔹 3つの検索ブロック -->
-<div id="blocks"></div>
+<div>
+  <h3>第1検索</h3>
+  <label>路線:</label>
+  <select id="lineSelect1">
+    <option value="1">日豊本線 上り</option>
+    <option value="2">日豊本線 下り</option>
+    <option value="3">久大本線 上り</option>
+    <option value="4">久大本線 下り</option>
+    <option value="5">豊肥本線 上り</option>
+    <option value="6">豊肥本線 下り</option>
+  </select>
+
+  <label>駅名:</label>
+  <input type="text" id="stationInput1">
+
+  <label>時刻:</label>
+  <input type="time" id="timeInput1">
+</div>
+
+<div>
+  <h3>第2検索（自動で上下線が切替）</h3>
+  <label>路線:</label>
+  <select id="lineSelect2" disabled></select>
+
+  <label>駅名:</label>
+  <input type="text" id="stationInput2">
+
+  <label>時刻:</label>
+  <input type="time" id="timeInput2">
+</div>
+
+<div>
+  <h3>第3検索</h3>
+  <label>路線:</label>
+  <select id="lineSelect3">
+    <option value="1">日豊本線 上り</option>
+    <option value="2">日豊本線 下り</option>
+    <option value="3">久大本線 上り</option>
+    <option value="4">久大本線 下り</option>
+    <option value="5">豊肥本線 上り</option>
+    <option value="6">豊肥本線 下り</option>
+  </select>
+
+  <label>駅名:</label>
+  <input type="text" id="stationInput3">
+
+  <label>時刻:</label>
+  <input type="time" id="timeInput3">
+</div>
+
+<button id="searchBtn">検索</button>
+
+<div id="result1"></div>
+<div id="result2"></div>
+<div id="result3"></div>
 
 <script>
-const CANDIDATE_COUNT = 5; // 候補数
-const BLOCK_COUNT = 3;     // 入力欄のセット数
-let csvCache = {};         // 路線ごとのCSVをキャッシュ
+const CSV_PATHS = {
+  1: 'CSV_db/CSV_1_NPHs-NBR_db.csv',
+  2: 'CSV_db/CSV_2_NPHs-KDR_db.csv',
+  3: 'CSV_db/CSV_3_KDHs-NBR_db.csv',
+  4: 'CSV_db/CSV_4_KDHs-KDR_db.csv',
+  5: 'CSV_db/CSV_5_HHHs-NBR_db.csv',
+  6: 'CSV_db/CSV_6_HHHs-KDR_db.csv'
+};
 
-// ページロード時に3セット作成
+const CANDIDATE_COUNT = 5;
+
+// -------------------- ページ初期化 --------------------
 window.addEventListener('DOMContentLoaded', () => {
-  const container = document.getElementById('blocks');
+  const params = new URLSearchParams(location.search);
+  const now = new Date();
+  const defaultTime = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
-  for (let i = 1; i <= BLOCK_COUNT; i++) {
-    container.innerHTML += createSearchBlock(i);
-  }
+  // クエリまたはローカルストレージまたはデフォルト
+  const line  = parseInt(params.get('line'))   || parseInt(localStorage.getItem('line'))   || 1;
+  const station = params.get('station')       || localStorage.getItem('station')          || '大分';
+  const time  = params.get('time')            || localStorage.getItem('time')             || defaultTime;
 
-  // 初期値設定＆初期ロード
-  for (let i = 1; i <= BLOCK_COUNT; i++) {
-    setDefaultValues(i);
-    loadCSV(document.getElementById(`lineSelect${i}`).value);
-  }
+  const sline = parseInt(params.get('sline')) || parseInt(localStorage.getItem('sline'))   || 1;
+  const sstation = params.get('sstation')     || localStorage.getItem('sstation')         || '大分';
+  const stime = params.get('stime')           || localStorage.getItem('stime')            || defaultTime;
+
+  // 入力欄にセット
+  document.getElementById('lineSelect1').value = line;
+  document.getElementById('stationInput1').value = station;
+  document.getElementById('timeInput1').value = time;
+
+  // 2番目はlineに応じて上下を切替
+  const line2 = (line % 2 === 1) ? line + 1 : line - 1;
+  setLineSelectOptions(document.getElementById('lineSelect2'), line2);
+  document.getElementById('stationInput2').value = station;
+  document.getElementById('timeInput2').value = time;
+
+  document.getElementById('lineSelect3').value = sline;
+  document.getElementById('stationInput3').value = sstation;
+  document.getElementById('timeInput3').value = stime;
+
+  // 初期検索
+  doSearch(line, station, time, 'result1');
+  doSearch(line2, station, time, 'result2');
+  doSearch(sline, sstation, stime, 'result3');
 });
 
-// 🔹 検索ブロックを生成
-function createSearchBlock(id) {
-  return `
-  <div class="search-block" id="block${id}">
-    <h3>検索${id}</h3>
-    <label for="lineSelect${id}">路線:</label>
-    <select id="lineSelect${id}" onchange="loadCSV(this.value)">
-      <option value="CSV_db/CSV_1_NPHs-NBR_db.csv" selected>日豊本線 上り</option>
-      <option value="CSV_db/CSV_2_NPHs-KDR_db.csv">日豊本線 下り</option>
-      <option value="CSV_db/CSV_3_KDHs-NBR_db.csv">久大本線 上り</option>
-      <option value="CSV_db/CSV_4_KDHs-KDR_db.csv">久大本線 下り</option>
-      <option value="CSV_db/CSV_5_HHHs-NBR_db.csv">豊肥本線 上り</option>
-      <option value="CSV_db/CSV_6_HHHs-KDR_db.csv">豊肥本線 下り</option>
-    </select>
+// -------------------- イベント --------------------
+document.getElementById('searchBtn').addEventListener('click', () => {
+  const line  = parseInt(document.getElementById('lineSelect1').value);
+  const station = document.getElementById('stationInput1').value.trim();
+  const time  = document.getElementById('timeInput1').value;
 
-    <label for="stationInput${id}">駅名:</label>
-    <input type="text" id="stationInput${id}" value="大分">
+  const line2 = (line % 2 === 1) ? line + 1 : line - 1;
+  setLineSelectOptions(document.getElementById('lineSelect2'), line2);
+  const station2 = document.getElementById('stationInput2').value.trim();
+  const time2  = document.getElementById('timeInput2').value;
 
-    <label for="timeInput${id}">時刻:</label>
-    <input type="time" id="timeInput${id}">
+  const sline = parseInt(document.getElementById('lineSelect3').value);
+  const sstation = document.getElementById('stationInput3').value.trim();
+  const stime = document.getElementById('timeInput3').value;
 
-    <button onclick="searchSchedule(${id})">検索</button>
+  // ローカルストレージに保存
+  localStorage.setItem('line', line);
+  localStorage.setItem('station', station);
+  localStorage.setItem('time', time);
+  localStorage.setItem('sline', sline);
+  localStorage.setItem('sstation', sstation);
+  localStorage.setItem('stime', stime);
 
-    <div id="result${id}"></div>
-  </div>
+  // 検索
+  doSearch(line, station, time, 'result1');
+  doSearch(line2, station2, time2, 'result2');
+  doSearch(sline, sstation, stime, 'result3');
+});
+
+// -------------------- 関数 --------------------
+function setLineSelectOptions(selectElem, selectedValue) {
+  selectElem.innerHTML = `
+    <option value="1">日豊本線 上り</option>
+    <option value="2">日豊本線 下り</option>
+    <option value="3">久大本線 上り</option>
+    <option value="4">久大本線 下り</option>
+    <option value="5">豊肥本線 上り</option>
+    <option value="6">豊肥本線 下り</option>
   `;
+  selectElem.value = selectedValue;
 }
 
-// 🔹 初期値（現在時刻など）を設定
-function setDefaultValues(id) {
-  const now = new Date();
-  const hh = String(now.getHours()).padStart(2, '0');
-  const mm = String(now.getMinutes()).padStart(2, '0');
-  document.getElementById(`timeInput${id}`).value = `${hh}:${mm}`;
-}
-
-// 🔹 CSVをロード＆キャッシュ
 async function loadCSV(path) {
-  if (csvCache[path]) return; // キャッシュ済みなら再ロード不要
-  try {
-    const res = await fetch(path);
-    const text = await res.text();
-    csvCache[path] = text.trim().split('\n').map(row => row.split(','));
-  } catch (err) {
-    console.error('CSV読み込みエラー:', err);
-    csvCache[path] = [];
-  }
+  const res = await fetch(path);
+  const text = await res.text();
+  return text.trim().split('\n').map(r => r.split(','));
 }
 
-// 🔹 時刻を分に変換
 function timeToMinutes(t) {
-  const [h, m] = t.split(':').map(Number);
-  return h * 60 + m;
+  const [h,m] = t.split(':').map(Number);
+  return h*60 + m;
 }
 
-// 🔹 検索処理
-function searchSchedule(id) {
-  const line = document.getElementById(`lineSelect${id}`).value;
-  const station = document.getElementById(`stationInput${id}`).value.trim();
-  const inputTime = document.getElementById(`timeInput${id}`).value;
-  const resultDiv = document.getElementById(`result${id}`);
-  resultDiv.innerHTML = '';
+async function doSearch(line, station, time, resultId) {
+  const container = document.getElementById(resultId);
+  container.innerHTML = "<p>読み込み中...</p>";
 
-  const csvData = csvCache[line];
-  if (!station || !inputTime || !csvData || csvData.length === 0) {
-    resultDiv.innerHTML = "<p>データが不足しています。</p>";
-    return;
-  }
+  try {
+    const csvData = await loadCSV(CSV_PATHS[line]);
+    const targetRowIndex = csvData.findIndex(r => r[0] === station + " 発");
+    if (targetRowIndex === -1) {
+      container.innerHTML = "<p>該当する駅が見つかりません。</p>";
+      return;
+    }
 
-  const targetRowIndex = csvData.findIndex(row => row[0] === station + " 発");
-  if (targetRowIndex === -1) {
-    resultDiv.innerHTML = "<p>該当する駅が見つかりません。</p>";
-    return;
-  }
+    const inputMin = timeToMinutes(time);
+    const row = csvData[targetRowIndex];
 
-  const row = csvData[targetRowIndex];
-  const inputMin = timeToMinutes(inputTime);
-
-  // 🔹 入力時刻以降の時刻を取得しソート
-  let allTimes = [];
-  for (let c = 1; c < row.length; c++) {
-    const t = row[c];
-    if (t && /^\d{1,2}:\d{2}$/.test(t)) {
-      const tm = timeToMinutes(t);
-      if (tm >= inputMin) {
-        allTimes.push({col: c, time: t, minutes: tm});
+    // 入力時刻以降を抽出
+    let allTimes = [];
+    for (let c = 1; c < row.length; c++) {
+      const t = row[c];
+      if (t && /^\d{1,2}:\d{2}$/.test(t)) {
+        const tm = timeToMinutes(t);
+        if (tm >= inputMin) {
+          allTimes.push({col: c, time: t, minutes: tm});
+        }
       }
     }
-  }
-  allTimes.sort((a, b) => a.minutes - b.minutes);
 
-  const nextTimes = allTimes.slice(0, CANDIDATE_COUNT);
-  if (nextTimes.length === 0) {
-    resultDiv.innerHTML = "<p>該当する候補が見つかりません。</p>";
-    return;
-  }
+    allTimes.sort((a,b) => a.minutes - b.minutes);
+    const nextTimes = allTimes.slice(0, CANDIDATE_COUNT);
 
-  // 🔹 表を作成（行=候補、列=1,2,3,5行目＋駅行）
-  let html = "<table>";
-  nextTimes.forEach(candidate => {
-    html += "<tr>";
-    [1,2,3,5].forEach(r => {
-      html += `<td>${csvData[r-1][candidate.col] || ''}</td>`;
+    if (nextTimes.length === 0) {
+      container.innerHTML = "<p>該当する候補がありません。</p>";
+      return;
+    }
+
+    // 表作成（行: 候補、列: 1,2,3,5行目＋検索駅行）
+    let html = "<table>";
+    nextTimes.forEach(candidate => {
+      html += "<tr>";
+      [1,2,3,5].forEach(r => {
+        html += `<td>${csvData[r-1][candidate.col] || ''}</td>`;
+      });
+      html += `<td>${csvData[targetRowIndex][candidate.col] || ''}</td>`;
+      html += "</tr>";
     });
-    html += `<td>${csvData[targetRowIndex][candidate.col] || ''}</td>`;
-    html += "</tr>";
-  });
-  html += "</table>";
+    html += "</table>";
 
-  resultDiv.innerHTML = html;
+    container.innerHTML = html;
+  } catch (err) {
+    container.innerHTML = "<p>CSVの読み込みに失敗しました。</p>";
+    console.error(err);
+  }
 }
 </script>
 
