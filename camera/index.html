@@ -48,15 +48,16 @@ video{
 }
 .zoomContainer{
   position:absolute;
-  width:200px;
   text-align:center;
   color:white;
   font-size:1rem;
   z-index:10;
-  height: 60px;
 }
-.zoomSlider{
+.zoomSlider-bottom{
   width:100%;
+}
+.zoomSlider-bottom{
+  height:100%;
 }
 
 /* 既存の下部中央 */
@@ -68,6 +69,7 @@ video{
 #zoomContainer-bottom{
   bottom:120px;
   left:50%;
+  width:200px;
   transform:translateX(-50%);
 }
 #switchCamBtn-bottom{
@@ -85,6 +87,7 @@ video{
 #zoomContainer-right{
   right:120px;
   top:50%;
+  height:200px;
   transform:translateY(-50%);
   transform: rotate(-0.25turn);
 }
@@ -178,7 +181,7 @@ video{
   <button id="shutterBtn-bottom" class="shutterBtn"></button>
   <div id="zoomContainer-bottom" class="zoomContainer">
     <div class="zoomValue">1.0x</div>
-    <input type="range" class="zoomSlider" min="1" max="3" step="0.1" value="1">
+    <input type="range" class="zoomSlider-bottom" min="1" max="3" step="0.1" value="1">
   </div>
   <button id="switchCamBtn-bottom" class="switchCamBtn">⇆</button>
 
@@ -186,7 +189,7 @@ video{
   <button id="shutterBtn-right" class="shutterBtn"></button>
   <div id="zoomContainer-right" class="zoomContainer">
     <div class="zoomValue">1.0x</div>
-    <input type="range" class="zoomSlider" min="1" max="3" step="0.1" value="1">
+    <input type="range" class="zoomSlider-right" min="1" max="3" step="0.1" value="1">
   </div>
   <button id="switchCamBtn-right" class="switchCamBtn">⇆</button>
 </div>
