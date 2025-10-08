@@ -3,27 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>人物検出アラート＋写真（元画像保存）</title>
+<title>人物検出アラート＋撮影（改善版）</title>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
 <style>
   body { font-family: sans-serif; padding: 16px; background: #f7f7f7; }
-  video, canvas { border: 1px solid #333; }
+  canvas { border: 1px solid #333; }
   button, input { margin: 4px; }
 </style>
 </head>
 <body>
-<h1>複数人物検出＋写真（元画像保存）</h1>
+<h1>人物検出＋撮影（改善版）</h1>
 
+<button id="startBtn">検出開始</button>
 <button id="switchBtn">カメラ切替</button>
 <button id="photoBtn">写真撮影</button>
 <label>精度閾値: <input id="scoreThreshold" type="range" min="0" max="1" step="0.05" value="0.3"></label>
-<p id="status">モデル読み込み中...</p>
+<p id="status">モデル未起動</p>
 <p>検出人数: <span id="count">0</span></p>
 
-<!-- 元動画を画面に表示 -->
-<video id="video" autoplay playsinline style="width:640px; height:auto;"></video>
-<!-- 検出結果表示用 Canvas -->
+<video id="video" autoplay playsinline style="display:none;"></video>
 <canvas id="canvas" width="640" height="480"></canvas>
 
 <audio id="alertSound" src="alert.mp3" preload="auto"></audio>
@@ -33,13 +32,15 @@ let detector, video, ctx;
 let currentFacingMode = "environment";
 let stream;
 let audioInitialized = false;
+let detecting = false;
 const alertSound = document.getElementById('alertSound');
+const startBtn = document.getElementById('startBtn');
 const switchBtn = document.getElementById('switchBtn');
 const photoBtn = document.getElementById('photoBtn');
 const countDisplay = document.getElementById('count');
 const scoreThreshold = document.getElementById('scoreThreshold');
 
-// --- Audio 初期化（ユーザー操作時） ---
+// --- AudioContext 初期化 ---
 function initAudioOnUserGesture() {
   if(!audioInitialized){
     alertSound.play().then(()=>{ alertSound.pause(); alertSound.currentTime=0; });
@@ -47,6 +48,7 @@ function initAudioOnUserGesture() {
   }
 }
 
+// --- カメラ初期化 ---
 async function initCamera() {
   if(stream) stream.getTracks().forEach(track=>track.stop());
   stream = await navigator.mediaDevices.getUserMedia({
@@ -56,6 +58,7 @@ async function initCamera() {
   await new Promise(r=>video.onloadedmetadata=r);
 }
 
+// --- モデル初期化 ---
 async function initModel() {
   detector = await poseDetection.createDetector(
     poseDetection.SupportedModels.MoveNet,
@@ -64,11 +67,14 @@ async function initModel() {
   document.getElementById('status').innerText = "モデル準備完了";
 }
 
+// --- 検出ループ ---
 async function detect() {
-  // Canvas は動画フレームと検出結果を描画
-  ctx.drawImage(video,0,0,video.videoWidth,video.videoHeight);
-
+  if(!detecting) return;
   const poses = await detector.estimatePoses(video);
+
+  // --- 元映像そのまま描画 ---
+  ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+
   const threshold = parseFloat(scoreThreshold.value);
   let validCount = 0;
 
@@ -76,9 +82,9 @@ async function detect() {
     const avgScore = person.keypoints.reduce((a,b)=>a+(b.score||0),0)/person.keypoints.length;
     if(avgScore >= threshold){
       validCount++;
-      // 検出結果を描画
+      // キーポイント描画
       person.keypoints.forEach(kp=>{
-        if(kp.score > threshold){
+        if(kp.score>threshold){
           ctx.beginPath();
           ctx.arc(kp.x, kp.y, 5, 0, Math.PI*2);
           ctx.fillStyle = "red";
@@ -99,14 +105,13 @@ async function detect() {
   requestAnimationFrame(detect);
 }
 
-// --- 写真撮影（検出なしの元動画を保存） ---
+// --- 写真撮影（検出結果なし） ---
 photoBtn.addEventListener('click', ()=>{
-  initAudioOnUserGesture(); // 初回ユーザー操作で音再生可能に
+  initAudioOnUserGesture();
   const photoCanvas = document.createElement('canvas');
   photoCanvas.width = video.videoWidth;
   photoCanvas.height = video.videoHeight;
   const pctx = photoCanvas.getContext('2d');
-  // 動画フレームそのまま描画（検出結果なし）
   pctx.drawImage(video,0,0,photoCanvas.width,photoCanvas.height);
   const dataURL = photoCanvas.toDataURL('image/png');
   const a = document.createElement('a');
@@ -122,16 +127,17 @@ switchBtn.addEventListener('click', async ()=>{
   await initCamera();
 });
 
-// --- メイン ---
-async function main(){
+// --- 検出開始ボタン ---
+startBtn.addEventListener('click', async ()=>{
+  initAudioOnUserGesture();
   video = document.getElementById('video');
   ctx = document.getElementById('canvas').getContext('2d');
   await initCamera();
   await initModel();
+  detecting = true;
   detect();
-}
-
-main();
+  document.getElementById('status').innerText = "検出中";
+});
 </script>
 </body>
 </html>
