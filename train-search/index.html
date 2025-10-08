@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Person Alert Advanced</title>
+<title>Person Alert with Switch</title>
 <style>
 body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP",sans-serif;margin:0;padding:16px;background:#f7f7f7}
 #wrap{max-width:960px;margin:0 auto}
@@ -18,7 +18,7 @@ canvas{position:absolute;left:0;top:0;pointer-events:none}
 </head>
 <body>
 <div id="wrap">
-<h1>カメラ検出通知（切替・履歴付き）</h1>
+<h1>カメラ検出通知（ボタン切替＋履歴）</h1>
 
 <div style="position:relative;">
   <video id="video" autoplay playsinline muted></video>
@@ -27,7 +27,6 @@ canvas{position:absolute;left:0;top:0;pointer-events:none}
 
 <div class="controls">
   <button id="startBtn">カメラ開始</button>
-  <select id="cameraSelect"></select>
   <button id="switchBtn">カメラ切替</button>
   <label><input id="soundToggle" type="checkbox" checked> 音を鳴らす</label>
   <label class="small">しきい値: <input id="threshold" type="range" min="0.3" max="0.95" step="0.05" value="0.6"></label>
@@ -49,63 +48,64 @@ canvas{position:absolute;left:0;top:0;pointer-events:none}
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
 
 <script>
-const video = document.getElementById('video');
-const overlay = document.getElementById('overlay');
-const ctx = overlay.getContext('2d');
-const startBtn = document.getElementById('startBtn');
-const cameraSelect = document.getElementById('cameraSelect');
-const switchBtn = document.getElementById('switchBtn');
-const statusEl = document.getElementById('status');
-const beep = document.getElementById('beep');
-const soundToggle = document.getElementById('soundToggle');
-const thresholdSlider = document.getElementById('threshold');
-const historyList = document.getElementById('historyList');
-const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+const video=document.getElementById('video');
+const overlay=document.getElementById('overlay');
+const ctx=overlay.getContext('2d');
+const startBtn=document.getElementById('startBtn');
+const switchBtn=document.getElementById('switchBtn');
+const statusEl=document.getElementById('status');
+const beep=document.getElementById('beep');
+const soundToggle=document.getElementById('soundToggle');
+const thresholdSlider=document.getElementById('threshold');
+const historyList=document.getElementById('historyList');
+const clearHistoryBtn=document.getElementById('clearHistoryBtn');
 
 let model=null;
 let stream=null;
-let currentDeviceId=null;
+let devices=[];           // カメラ一覧
+let currentIndex=0;       // 現在のカメラのインデックス
 let detecting=false;
 let lastPersonState=false;
 let lastBeepAt=0;
 const BEEP_COOLDOWN=5000;
 let detectInterval=300;
-const history=[];
-const SMOOTH_WINDOW=3;  // 直近N回の検出で平均をとる
+const smoothScores=[];    // スムージング用
+const SMOOTH_WINDOW=3;
+const detectionHistory=[]; // 履歴用
 
+// カメラ一覧取得
 async function listCameras(){
-  const devices=await navigator.mediaDevices.enumerateDevices();
-  cameraSelect.innerHTML='';
-  devices.filter(d=>d.kind==='videoinput').forEach(d=>{
-    const opt=document.createElement('option');
-    opt.value=d.deviceId;
-    opt.textContent=d.label || `カメラ${cameraSelect.length+1}`;
-    cameraSelect.appendChild(opt);
-  });
+  const all=await navigator.mediaDevices.enumerateDevices();
+  devices=all.filter(d=>d.kind==='videoinput');
+  if(devices.length===0) alert("カメラが見つかりません");
 }
 
-async function startCamera(deviceId){
+// カメラ開始
+async function startCamera(index=0){
   if(stream){
     stream.getTracks().forEach(t=>t.stop());
   }
   try{
+    const deviceId=devices[index]?devices[index].deviceId:undefined;
     stream=await navigator.mediaDevices.getUserMedia({video:{deviceId:deviceId?{exact:deviceId}:undefined},audio:false});
     video.srcObject=stream;
     await video.play();
     overlay.width=video.videoWidth;
     overlay.height=video.videoHeight;
-    currentDeviceId=deviceId||null;
+    currentIndex=index;
   }catch(e){
-    alert('カメラ起動失敗: '+e.message);
+    alert("カメラ起動失敗: "+e.message);
   }
 }
 
+// モデル読み込み
 async function loadModel(){
-  statusEl.textContent='ステータス: モデル読み込み中...';
+  statusEl.textContent="ステータス: モデル読み込み中...";
   model=await cocoSsd.load();
-  statusEl.textContent='ステータス: モデル読み込み完了';
+  statusEl.textContent="ステータス: モデル読み込み完了";
 }
 
+// ボックス描画
 function drawBoxes(predictions){
   ctx.clearRect(0,0,overlay.width,overlay.height);
   ctx.lineWidth=2;
@@ -122,13 +122,15 @@ function drawBoxes(predictions){
   });
 }
 
+// 履歴追加
 function addHistoryEntry(text){
   const li=document.createElement('li');
   li.textContent=text;
   historyList.prepend(li);
-  history.unshift(text);
+  detectionHistory.unshift(text);
 }
 
+// 検出ループ
 async function detectLoop(){
   if(!model||video.paused||video.ended) return;
   const now=performance.now();
@@ -136,13 +138,13 @@ async function detectLoop(){
   try{
     const predictions=await model.detect(video);
     drawBoxes(predictions);
-    const personScores=predictions.filter(p=>p.class==='person').map(p=>p.score);
-    const maxScore=personScores.length?Math.max(...personScores):0;
+    const scores=predictions.filter(p=>p.class==='person').map(p=>p.score);
+    const maxScore=scores.length?Math.max(...scores):0;
 
-    // 簡易スムージング
-    history.push(maxScore);
-    if(history.length>SMOOTH_WINDOW) history.splice(SMOOTH_WINDOW);
-    const avgScore=history.reduce((a,b)=>a+b,0)/history.length;
+    // スムージング
+    smoothScores.push(maxScore);
+    if(smoothScores.length>SMOOTH_WINDOW) smoothScores.shift();
+    const avgScore=smoothScores.reduce((a,b)=>a+b,0)/smoothScores.length;
 
     const personDetected=avgScore>=threshold;
 
@@ -156,33 +158,39 @@ async function detectLoop(){
       const t=new Date().toLocaleTimeString();
       addHistoryEntry(`${t} 検出 (score=${maxScore.toFixed(2)})`);
     }
+
     lastPersonState=personDetected;
     statusEl.textContent='ステータス: '+(personDetected?'人を検出':'未検出');
+
   }catch(e){
-    console.error('検出エラー',e);
+    console.error("検出エラー",e);
   }finally{
     if(detecting) setTimeout(detectLoop,detectInterval);
   }
 }
 
+// ボタン動作
 startBtn.addEventListener('click',async()=>{
   startBtn.disabled=true;
   await listCameras();
-  await startCamera(cameraSelect.value);
+  await startCamera(currentIndex);
   if(!model) await loadModel();
   if(!detecting){ detecting=true; detectLoop(); }
   startBtn.disabled=false;
 });
 
 switchBtn.addEventListener('click',async()=>{
-  if(cameraSelect.value!==currentDeviceId){
-    await startCamera(cameraSelect.value);
+  if(devices.length>1){
+    currentIndex=(currentIndex+1)%devices.length;
+    await startCamera(currentIndex);
+  }else{
+    alert("切り替える別のカメラがありません");
   }
 });
 
 clearHistoryBtn.addEventListener('click',()=>{
+  detectionHistory.length=0;
   historyList.innerHTML='';
-  history.length=0;
 });
 
 window.addEventListener('resize',()=>{
