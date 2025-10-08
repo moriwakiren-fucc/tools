@@ -1,143 +1,24 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>人物検出アラート＋撮影（改善版）</title>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
-<style>
-  body { font-family: sans-serif; padding: 16px; background: #f7f7f7; }
-  canvas { border: 1px solid #333; }
-  button, input { margin: 4px; }
-</style>
-</head>
-<body>
-<h1>人物検出＋撮影（改善版）</h1>
+// 検出ループ内
+poses.forEach(person => {
+  const avgScore = person.keypoints.reduce((a,b)=>a+(b.score||0),0)/person.keypoints.length;
+  if(avgScore >= threshold){
+    validCount++;
 
-<button id="startBtn">検出開始</button>
-<button id="switchBtn">カメラ切替</button>
-<button id="photoBtn">写真撮影</button>
-<label>精度閾値: <input id="scoreThreshold" type="range" min="0" max="1" step="0.05" value="0.3"></label>
-<p id="status">モデル未起動</p>
-<p>検出人数: <span id="count">0</span></p>
+    // キーポイント描画
+    person.keypoints.forEach(kp=>{
+      if(kp.score>threshold){
+        ctx.beginPath();
+        ctx.arc(kp.x, kp.y, 5, 0, Math.PI*2);
+        ctx.fillStyle = "red";
+        ctx.fill();
+      }
+    });
 
-<video id="video" autoplay playsinline style="display:none;"></video>
-<canvas id="canvas" width="640" height="480"></canvas>
-
-<audio id="alertSound" src="alert.mp3" preload="auto"></audio>
-
-<script>
-let detector, video, ctx;
-let currentFacingMode = "environment";
-let stream;
-let audioInitialized = false;
-let detecting = false;
-const alertSound = document.getElementById('alertSound');
-const startBtn = document.getElementById('startBtn');
-const switchBtn = document.getElementById('switchBtn');
-const photoBtn = document.getElementById('photoBtn');
-const countDisplay = document.getElementById('count');
-const scoreThreshold = document.getElementById('scoreThreshold');
-
-// --- AudioContext 初期化 ---
-function initAudioOnUserGesture() {
-  if(!audioInitialized){
-    alertSound.play().then(()=>{ alertSound.pause(); alertSound.currentTime=0; });
-    audioInitialized = true;
-  }
-}
-
-// --- カメラ初期化 ---
-async function initCamera() {
-  if(stream) stream.getTracks().forEach(track=>track.stop());
-  stream = await navigator.mediaDevices.getUserMedia({
-    video: { width:640, height:480, facingMode: currentFacingMode }
-  });
-  video.srcObject = stream;
-  await new Promise(r=>video.onloadedmetadata=r);
-}
-
-// --- モデル初期化 ---
-async function initModel() {
-  detector = await poseDetection.createDetector(
-    poseDetection.SupportedModels.MoveNet,
-    { modelType: poseDetection.movenet.modelType.MULTIPOSE_THUNDER }
-  );
-  document.getElementById('status').innerText = "モデル準備完了";
-}
-
-// --- 検出ループ ---
-async function detect() {
-  if(!detecting) return;
-  const poses = await detector.estimatePoses(video);
-
-  // --- 元映像そのまま描画 ---
-  ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-
-  const threshold = parseFloat(scoreThreshold.value);
-  let validCount = 0;
-
-  poses.forEach(person=>{
-    const avgScore = person.keypoints.reduce((a,b)=>a+(b.score||0),0)/person.keypoints.length;
-    if(avgScore >= threshold){
-      validCount++;
-      // キーポイント描画
-      person.keypoints.forEach(kp=>{
-        if(kp.score>threshold){
-          ctx.beginPath();
-          ctx.arc(kp.x, kp.y, 5, 0, Math.PI*2);
-          ctx.fillStyle = "red";
-          ctx.fill();
-        }
-      });
+    // ✅ 検出した瞬間に即音を鳴らす
+    if(audioInitialized){
+      // 再生中でも先頭に戻して再生
+      alertSound.currentTime = 0;
+      alertSound.play().catch(()=>{});
     }
-  });
-
-  countDisplay.textContent = validCount;
-
-  // 音再生
-  if(validCount>0 && audioInitialized){
-    alertSound.currentTime = 0;
-    alertSound.play().catch(()=>{});
   }
-
-  requestAnimationFrame(detect);
-}
-
-// --- 写真撮影（検出結果なし） ---
-photoBtn.addEventListener('click', ()=>{
-  initAudioOnUserGesture();
-  const photoCanvas = document.createElement('canvas');
-  photoCanvas.width = video.videoWidth;
-  photoCanvas.height = video.videoHeight;
-  const pctx = photoCanvas.getContext('2d');
-  pctx.drawImage(video,0,0,photoCanvas.width,photoCanvas.height);
-  const dataURL = photoCanvas.toDataURL('image/png');
-  const a = document.createElement('a');
-  a.href = dataURL;
-  a.download = 'photo.png';
-  a.click();
 });
-
-// --- カメラ切替 ---
-switchBtn.addEventListener('click', async ()=>{
-  initAudioOnUserGesture();
-  currentFacingMode = currentFacingMode==='environment'?'user':'environment';
-  await initCamera();
-});
-
-// --- 検出開始ボタン ---
-startBtn.addEventListener('click', async ()=>{
-  initAudioOnUserGesture();
-  video = document.getElementById('video');
-  ctx = document.getElementById('canvas').getContext('2d');
-  await initCamera();
-  await initModel();
-  detecting = true;
-  detect();
-  document.getElementById('status').innerText = "検出中";
-});
-</script>
-</body>
-</html>
