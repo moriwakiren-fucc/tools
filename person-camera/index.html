@@ -20,7 +20,6 @@
 <button id="photoBtn">写真撮影</button>
 <label>精度閾値: <input id="scoreThreshold" type="range" min="0" max="1" step="0.05" value="0.3"></label>
 <p id="status">モデル未起動</p>
-<p>検出人数: <span id="count">0</span></p>
 
 <video id="video" autoplay playsinline style="display:none;"></video>
 <canvas id="canvas" width="640" height="480"></canvas>
@@ -38,8 +37,8 @@ let isPlaying = false;
 const startBtn = document.getElementById('startBtn');
 const switchBtn = document.getElementById('switchBtn');
 const photoBtn = document.getElementById('photoBtn');
-const countDisplay = document.getElementById('count');
 const scoreThreshold = document.getElementById('scoreThreshold');
+const statusDisplay = document.getElementById('status');
 
 // --- AudioContext 初期化（ユーザー操作で必ず実行） ---
 async function initAudioOnUserGesture() {
@@ -67,7 +66,6 @@ function playAlert() {
   source.connect(audioCtx.destination);
   isPlaying = true;
 
-  // 背景赤点滅
   document.body.style.backgroundColor = "red";
 
   source.onended = () => {
@@ -94,7 +92,6 @@ async function initModel() {
     poseDetection.SupportedModels.MoveNet,
     { modelType: poseDetection.movenet.modelType.MULTIPOSE_THUNDER }
   );
-  document.getElementById('status').innerText = "モデル準備完了";
 }
 
 // --- 検出ループ ---
@@ -105,16 +102,10 @@ async function detect() {
   ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
 
   const threshold = parseFloat(scoreThreshold.value);
-  let validCount = 0;
 
   poses.forEach(person => {
-    // 有効なキーポイントのみ抽出
     const validKeypoints = person.keypoints.filter(kp => kp.score > threshold);
-    // 10点以上のキーポイントがある場合のみ人と判定
     if(validKeypoints.length >= 10){
-      validCount++;
-
-      // キーポイント描画
       validKeypoints.forEach(kp=>{
         ctx.beginPath();
         ctx.arc(kp.x, kp.y, 5, 0, Math.PI*2);
@@ -122,12 +113,10 @@ async function detect() {
         ctx.fill();
       });
 
-      // 音＋赤点滅
       playAlert();
     }
   });
 
-  countDisplay.textContent = validCount;
   requestAnimationFrame(detect);
 }
 
@@ -155,6 +144,7 @@ switchBtn.addEventListener('click', async ()=>{
 
 // --- 検出開始 ---
 startBtn.addEventListener('click', async ()=>{
+  statusDisplay.innerText = "検出中…";
   await initAudioOnUserGesture();
   video = document.getElementById('video');
   ctx = document.getElementById('canvas').getContext('2d');
@@ -162,7 +152,6 @@ startBtn.addEventListener('click', async ()=>{
   await initModel();
   detecting = true;
   detect();
-  document.getElementById('status').innerText = "検出中";
 });
 </script>
 </body>
