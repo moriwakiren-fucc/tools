@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>人物検出アラート＋撮影（音＋赤点滅安定版）</title>
+<title>人物検出アラート＋撮影（精度向上版）</title>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
 <style>
@@ -13,7 +13,7 @@
 </style>
 </head>
 <body>
-<h1>人物検出＋撮影＋赤点滅（安定版）</h1>
+<h1>人物検出＋撮影＋赤点滅（精度向上版）</h1>
 
 <button id="startBtn">検出開始</button>
 <button id="switchBtn">カメラ切替</button>
@@ -46,7 +46,6 @@ async function initAudioOnUserGesture() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    // 音声ファイル読み込み
     const response = await fetch('alert.mp3');
     const arrayBuffer = await response.arrayBuffer();
     audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
@@ -56,7 +55,7 @@ async function initAudioOnUserGesture() {
     source.buffer = audioBuffer;
     source.connect(audioCtx.destination);
     source.start(0);
-    source.stop(audioCtx.currentTime + 0.01); // 10msだけ再生
+    source.stop(audioCtx.currentTime + 0.01);
   }
 }
 
@@ -73,7 +72,7 @@ function playAlert() {
 
   source.onended = () => {
     isPlaying = false;
-    document.body.style.backgroundColor = "#f7f7f7"; // 元に戻す
+    document.body.style.backgroundColor = "#f7f7f7";
   };
 
   source.start();
@@ -103,28 +102,27 @@ async function detect() {
   if(!detecting) return;
   const poses = await detector.estimatePoses(video);
 
-  // 元映像描画
   ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
 
   const threshold = parseFloat(scoreThreshold.value);
   let validCount = 0;
 
   poses.forEach(person => {
-    const avgScore = person.keypoints.reduce((a,b)=>a+(b.score||0),0)/person.keypoints.length;
-    if(avgScore >= threshold){
+    // 有効なキーポイントのみ抽出
+    const validKeypoints = person.keypoints.filter(kp => kp.score > threshold);
+    // 10点以上のキーポイントがある場合のみ人と判定
+    if(validKeypoints.length >= 10){
       validCount++;
 
       // キーポイント描画
-      person.keypoints.forEach(kp=>{
-        if(kp.score>threshold){
-          ctx.beginPath();
-          ctx.arc(kp.x, kp.y, 5, 0, Math.PI*2);
-          ctx.fillStyle = "red";
-          ctx.fill();
-        }
+      validKeypoints.forEach(kp=>{
+        ctx.beginPath();
+        ctx.arc(kp.x, kp.y, 5, 0, Math.PI*2);
+        ctx.fillStyle = "red";
+        ctx.fill();
       });
 
-      // 検出時に音＋赤点滅
+      // 音＋赤点滅
       playAlert();
     }
   });
@@ -140,7 +138,7 @@ photoBtn.addEventListener('click', ()=>{
   photoCanvas.width = video.videoWidth;
   photoCanvas.height = video.videoHeight;
   const pctx = photoCanvas.getContext('2d');
-  pctx.drawImage(video,0,0,photoCanvas.width,photoCanvas.height); // 元映像のみ
+  pctx.drawImage(video,0,0,photoCanvas.width,photoCanvas.height);
   const dataURL = photoCanvas.toDataURL('image/png');
   const a = document.createElement('a');
   a.href = dataURL;
