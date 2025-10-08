@@ -37,8 +37,8 @@ let isPlaying = false;
 const startBtn = document.getElementById('startBtn');
 const switchBtn = document.getElementById('switchBtn');
 const photoBtn = document.getElementById('photoBtn');
-const scoreThreshold = document.getElementById('scoreThreshold');
 const statusDisplay = document.getElementById('status');
+const scoreThreshold = document.getElementById('scoreThreshold');
 
 // --- AudioContext 初期化（ユーザー操作で必ず実行） ---
 async function initAudioOnUserGesture() {
@@ -92,6 +92,7 @@ async function initModel() {
     poseDetection.SupportedModels.MoveNet,
     { modelType: poseDetection.movenet.modelType.MULTIPOSE_THUNDER }
   );
+  statusDisplay.innerText = "検出中";
 }
 
 // --- 検出ループ ---
@@ -112,7 +113,6 @@ async function detect() {
         ctx.fillStyle = "red";
         ctx.fill();
       });
-
       playAlert();
     }
   });
@@ -144,7 +144,7 @@ switchBtn.addEventListener('click', async ()=>{
 
 // --- 検出開始 ---
 startBtn.addEventListener('click', async ()=>{
-  statusDisplay.innerText = "検出中…";
+  statusDisplay.innerText = "モデル起動中…";
   await initAudioOnUserGesture();
   video = document.getElementById('video');
   ctx = document.getElementById('canvas').getContext('2d');
