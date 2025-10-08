@@ -1,108 +1,112 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>複数人物検出アラート（MoveNet MultiPose）</title>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人物検出アラート＋撮影</title>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+<style>
+  body { font-family: sans-serif; padding: 16px; background: #f7f7f7; }
+  video, canvas { border: 1px solid #333; }
+  button, input { margin: 4px; }
+</style>
 </head>
 <body>
-  <h1>複数人物検出アラート（MoveNet MultiPose THUNDER）</h1>
+<h1>複数人物検出＋撮影</h1>
 
-  <!-- カメラ切替ボタン -->
-  <button id="switchBtn">カメラ切替</button>
+<button id="switchBtn">カメラ切替</button>
+<button id="photoBtn">写真撮影</button>
+<label>精度閾値: <input id="scoreThreshold" type="range" min="0" max="1" step="0.05" value="0.3"></label>
+<p id="status">モデル読み込み中...</p>
+<p>検出人数: <span id="count">0</span></p>
 
-  <video id="video" autoplay playsinline style="width:640px; height:auto; border:1px solid #ccc;"></video>
-  <canvas id="canvas" width="640" height="480" style="border:1px solid #333;"></canvas>
-  <audio id="alertSound" src="alert.mp3" preload="auto"></audio>
-  <p id="status">モデルを読み込み中...</p>
-  <p>検出人数: <span id="count">0</span></p>
+<video id="video" autoplay playsinline width="640" height="480"></video>
+<canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
 
-  <script>
-    let detector, video, ctx;
-    let currentFacingMode = "environment"; // ✅ デフォルト背面カメラ
-    let stream;
+<audio id="alertSound" src="alert.mp3" preload="auto"></audio>
 
-    const alertSound = document.getElementById('alertSound');
-    const switchBtn = document.getElementById('switchBtn');
-    const countDisplay = document.getElementById('count');
+<script>
+let detector, video, ctx;
+let currentFacingMode = "environment";
+let stream;
+const alertSound = document.getElementById('alertSound');
+const switchBtn = document.getElementById('switchBtn');
+const photoBtn = document.getElementById('photoBtn');
+const countDisplay = document.getElementById('count');
+const scoreThreshold = document.getElementById('scoreThreshold');
 
-    // カメラ初期化
-    async function initCamera() {
-      // 既存のカメラストリームを停止
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
+async function initCamera() {
+  if(stream) stream.getTracks().forEach(track=>track.stop());
+  stream = await navigator.mediaDevices.getUserMedia({
+    video: { width:640, height:480, facingMode: currentFacingMode }
+  });
+  video.srcObject = stream;
+  await new Promise(r=>video.onloadedmetadata=r);
+}
 
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: 640,
-          height: 480,
-          facingMode: currentFacingMode  // ✅ カメラ方向を指定
-        }
-      });
+async function initModel() {
+  detector = await poseDetection.createDetector(
+    poseDetection.SupportedModels.MoveNet,
+    { modelType: poseDetection.movenet.modelType.MULTIPOSE_THUNDER }
+  );
+  document.getElementById('status').innerText = "モデル準備完了";
+}
 
-      video.srcObject = stream;
-      await new Promise(resolve => video.onloadedmetadata = resolve);
+async function detect() {
+  const poses = await detector.estimatePoses(video);
+  ctx.drawImage(video,0,0,640,480);
+
+  // 検出人数はスコア閾値以上のみ
+  const threshold = parseFloat(scoreThreshold.value);
+  let validCount = 0;
+  poses.forEach(person=>{
+    const avgScore = person.keypoints.reduce((a,b)=>a+(b.score||0),0)/person.keypoints.length;
+    if(avgScore >= threshold){
+      validCount++;
+      // キーポイント描画不要（今回は省略）
     }
+  });
+  countDisplay.textContent = validCount;
 
-    // モデル初期化（MultiPose版）
-    async function initModel() {
-      detector = await poseDetection.createDetector(
-        poseDetection.SupportedModels.MoveNet,
-        {
-          modelType: poseDetection.movenet.modelType.MULTIPOSE_THUNDER, // ✅ 複数人対応・高精度
-          enableSmoothing: true
-        }
-      );
-      document.getElementById('status').innerText = "モデル準備完了";
-    }
+  // 人が1人以上いれば音
+  if(validCount>0) alertSound.play();
 
-    // 検出ループ
-    async function detect() {
-      const poses = await detector.estimatePoses(video);
-      ctx.drawImage(video, 0, 0, 640, 480);
+  requestAnimationFrame(detect);
+}
 
-      // 検出された人数を表示
-      countDisplay.textContent = poses.length;
+// 写真撮影
+photoBtn.addEventListener('click', ()=>{
+  const photoCanvas = document.createElement('canvas');
+  photoCanvas.width = video.videoWidth;
+  photoCanvas.height = video.videoHeight;
+  const pctx = photoCanvas.getContext('2d');
+  pctx.drawImage(video,0,0,photoCanvas.width,photoCanvas.height);
+  const dataURL = photoCanvas.toDataURL('image/png');
 
-      if (poses.length > 0) {
-        // 検出された全員を描画
-        poses.forEach(person => {
-          person.keypoints.forEach(kp => {
-            if (kp.score > 0.3) {
-              ctx.beginPath();
-              ctx.arc(kp.x, kp.y, 5, 0, Math.PI * 2);
-              ctx.fillStyle = "red";
-              ctx.fill();
-            }
-          });
-        });
+  // ダウンロード
+  const a = document.createElement('a');
+  a.href = dataURL;
+  a.download = 'photo.png';
+  a.click();
+});
 
-        alertSound.play(); // 検出があれば音を鳴らす
-      }
+// カメラ切替
+switchBtn.addEventListener('click', async ()=>{
+  currentFacingMode = currentFacingMode==='environment'?'user':'environment';
+  await initCamera();
+});
 
-      requestAnimationFrame(detect);
-    }
+// メイン
+async function main(){
+  video = document.getElementById('video');
+  ctx = document.getElementById('canvas').getContext('2d');
+  await initCamera();
+  await initModel();
+  detect();
+}
 
-    // カメラ切替ボタンの動作
-    switchBtn.addEventListener('click', async () => {
-      currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
-      await initCamera(); // 切替後に再初期化
-    });
-
-    // メイン処理
-    async function main() {
-      video = document.getElementById('video');
-      ctx = document.getElementById('canvas').getContext('2d');
-
-      await initCamera();  // ✅ 初回は背面カメラを使用
-      await initModel();
-      detect();
-    }
-
-    main();
-  </script>
+main();
+</script>
 </body>
 </html>
