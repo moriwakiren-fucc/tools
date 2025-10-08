@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>人物検出アラート＋撮影（レスポンシブ版）</title>
+<title>人物検出アラート＋撮影（キーポイントスライダー＋レスポンシブ）</title>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
 <style>
@@ -15,15 +15,12 @@
     text-align: center;
   }
 
-  canvas {
+  #canvas {
     border: 1px solid #333;
     margin-top: 12px;
-    width: 100%;
-    height: auto;
-    max-width: 640px;
+    max-width: 100%;
   }
 
-  /* ボタン共通 */
   button, input[type=range] {
     margin: 6px 4px;
     font-size: 16px;
@@ -32,7 +29,6 @@
     cursor: pointer;
   }
 
-  /* 検出開始ボタン */
   #startBtn {
     background-color: #28a745;
     color: white;
@@ -43,16 +39,9 @@
     border-radius: 8px;
     transition: background-color 0.2s, transform 0.1s;
   }
-  #startBtn:hover {
-    background-color: #218838;
-    transform: scale(1.05);
-  }
-  #startBtn:active {
-    background-color: #1e7e34;
-    transform: scale(0.98);
-  }
+  #startBtn:hover { background-color: #218838; transform: scale(1.05); }
+  #startBtn:active { background-color: #1e7e34; transform: scale(0.98); }
 
-  /* 他のボタン */
   #switchBtn, #photoBtn {
     background-color: #007bff;
     color: white;
@@ -61,40 +50,29 @@
     border: none;
     border-radius: 6px;
   }
-  #switchBtn:hover, #photoBtn:hover {
-    background-color: #0069d9;
-  }
+  #switchBtn:hover, #photoBtn:hover { background-color: #0069d9; }
 
-  /* スライダー */
-  input[type=range] {
-    vertical-align: middle;
-    width: 60%;
-    max-width: 300px;
-  }
+  input[type=range] { vertical-align: middle; width: 60%; max-width: 300px; }
 
-  /* レスポンシブ: 小さい画面ではボタンを縦並び */
   @media (max-width: 480px) {
-    button, input[type=range] {
-      display: block;
-      width: 90%;
-      margin: 8px auto;
-      font-size: 18px;
-    }
+    button, input[type=range] { display: block; width: 90%; margin: 8px auto; font-size: 18px; }
   }
 </style>
 </head>
 <body>
-<h1>人物検出＋撮影＋赤点滅（レスポンシブ版）</h1>
+<h1>人物検出＋撮影＋赤点滅（キーポイントスライダー対応）</h1>
 
 <button id="startBtn">検出開始</button>
 <button id="switchBtn">カメラ切替</button>
 <button id="photoBtn">写真撮影</button>
 <br>
 <label>精度閾値: <input id="scoreThreshold" type="range" min="0" max="1" step="0.05" value="0.3"></label>
+<br>
+<label>最小キーポイント数: <input id="minKeypoints" type="range" min="5" max="20" step="1" value="10"></label>
 <p id="status">モデル未起動</p>
 
 <video id="video" autoplay playsinline style="display:none;"></video>
-<canvas id="canvas" width="640" height="480"></canvas>
+<canvas id="canvas"></canvas>
 
 <script>
 let detector, video, ctx;
@@ -102,7 +80,7 @@ let currentFacingMode = "environment";
 let stream;
 let detecting = false;
 
-// AudioContext
+// Audio
 let audioCtx, audioBuffer;
 let isPlaying = false;
 
@@ -111,15 +89,14 @@ const switchBtn = document.getElementById('switchBtn');
 const photoBtn = document.getElementById('photoBtn');
 const statusDisplay = document.getElementById('status');
 const scoreThreshold = document.getElementById('scoreThreshold');
+const minKeypoints = document.getElementById('minKeypoints');
 
 async function initAudioOnUserGesture() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
     const response = await fetch('alert.mp3');
     const arrayBuffer = await response.arrayBuffer();
     audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-
     const source = audioCtx.createBufferSource();
     source.buffer = audioBuffer;
     source.connect(audioCtx.destination);
@@ -134,14 +111,11 @@ function playAlert() {
   source.buffer = audioBuffer;
   source.connect(audioCtx.destination);
   isPlaying = true;
-
   document.body.style.backgroundColor = "red";
-
   source.onended = () => {
     isPlaying = false;
     document.body.style.backgroundColor = "#f7f7f7";
   };
-
   source.start();
 }
 
@@ -152,6 +126,11 @@ async function initCamera() {
   });
   video.srcObject = stream;
   await new Promise(r=>video.onloadedmetadata=r);
+
+  // キャンバスサイズを動画に合わせる
+  const canvas = document.getElementById('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
 }
 
 async function initModel() {
@@ -169,10 +148,11 @@ async function detect() {
   ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
 
   const threshold = parseFloat(scoreThreshold.value);
+  const minPoints = parseInt(minKeypoints.value);
 
   poses.forEach(person => {
     const validKeypoints = person.keypoints.filter(kp => kp.score > threshold);
-    if(validKeypoints.length >= 10){
+    if(validKeypoints.length >= minPoints){
       validKeypoints.forEach(kp=>{
         ctx.beginPath();
         ctx.arc(kp.x, kp.y, 5, 0, Math.PI*2);
@@ -186,6 +166,7 @@ async function detect() {
   requestAnimationFrame(detect);
 }
 
+// --- 写真撮影 ---
 photoBtn.addEventListener('click', ()=>{
   initAudioOnUserGesture();
   const photoCanvas = document.createElement('canvas');
@@ -200,12 +181,14 @@ photoBtn.addEventListener('click', ()=>{
   a.click();
 });
 
+// --- カメラ切替 ---
 switchBtn.addEventListener('click', async ()=>{
   await initAudioOnUserGesture();
   currentFacingMode = currentFacingMode==='environment'?'user':'environment';
   await initCamera();
 });
 
+// --- 検出開始 ---
 startBtn.addEventListener('click', async ()=>{
   statusDisplay.innerText = "モデル起動中…";
   await initAudioOnUserGesture();
