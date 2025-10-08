@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>人物検出アラート＋撮影（改善版）</title>
+<title>人物検出アラート＋撮影（音制御版）</title>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
 <style>
@@ -13,7 +13,7 @@
 </style>
 </head>
 <body>
-<h1>人物検出＋撮影（改善版）</h1>
+<h1>人物検出＋撮影（音制御版）</h1>
 
 <button id="startBtn">検出開始</button>
 <button id="switchBtn">カメラ切替</button>
@@ -33,6 +33,7 @@ let currentFacingMode = "environment";
 let stream;
 let audioInitialized = false;
 let detecting = false;
+let isPlaying = false; // 音の再生状態フラグ
 const alertSound = document.getElementById('alertSound');
 const startBtn = document.getElementById('startBtn');
 const switchBtn = document.getElementById('switchBtn');
@@ -72,7 +73,7 @@ async function detect() {
   if(!detecting) return;
   const poses = await detector.estimatePoses(video);
 
-  // --- 元映像そのまま描画 ---
+  // 元映像そのまま描画
   ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
 
   const threshold = parseFloat(scoreThreshold.value);
@@ -82,7 +83,7 @@ async function detect() {
     const avgScore = person.keypoints.reduce((a,b)=>a+(b.score||0),0)/person.keypoints.length;
     if(avgScore >= threshold){
       validCount++;
-  
+
       // キーポイント描画
       person.keypoints.forEach(kp=>{
         if(kp.score>threshold){
@@ -93,23 +94,16 @@ async function detect() {
         }
       });
 
-      // ✅ 検出した瞬間に即音を鳴らす
-      if(audioInitialized){
-        // 再生中でも先頭に戻して再生
+      // 音再生（前回再生終了後に鳴らす）
+      if(audioInitialized && !isPlaying){
+        isPlaying = true;
         alertSound.currentTime = 0;
-        alertSound.play().catch(()=>{});
+        alertSound.play().finally(()=>{ isPlaying = false; });
       }
     }
   });
 
-  
   countDisplay.textContent = validCount;
-
-  // 音再生
-  if(validCount>0 && audioInitialized){
-    alertSound.currentTime = 0;
-    alertSound.play().catch(()=>{});
-  }
 
   requestAnimationFrame(detect);
 }
@@ -121,7 +115,7 @@ photoBtn.addEventListener('click', ()=>{
   photoCanvas.width = video.videoWidth;
   photoCanvas.height = video.videoHeight;
   const pctx = photoCanvas.getContext('2d');
-  pctx.drawImage(video,0,0,photoCanvas.width,photoCanvas.height);
+  pctx.drawImage(video,0,0,photoCanvas.width,photoCanvas.height); // キーポイントなし
   const dataURL = photoCanvas.toDataURL('image/png');
   const a = document.createElement('a');
   a.href = dataURL;
