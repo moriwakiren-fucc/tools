@@ -22,7 +22,7 @@
 <p>検出人数: <span id="count">0</span></p>
 
 <video id="video" autoplay playsinline width="640" height="480"></video>
-<canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+<canvas id="canvas" width="640" height="480"></canvas>
 
 <audio id="alertSound" src="alert.mp3" preload="auto"></audio>
 
@@ -57,34 +57,41 @@ async function detect() {
   const poses = await detector.estimatePoses(video);
   ctx.drawImage(video,0,0,640,480);
 
-  // 検出人数はスコア閾値以上のみ
   const threshold = parseFloat(scoreThreshold.value);
   let validCount = 0;
+
   poses.forEach(person=>{
     const avgScore = person.keypoints.reduce((a,b)=>a+(b.score||0),0)/person.keypoints.length;
     if(avgScore >= threshold){
       validCount++;
-      // キーポイント描画不要（今回は省略）
+      // ✅ 検出結果を画面に描画
+      person.keypoints.forEach(kp=>{
+        if(kp.score > threshold){
+          ctx.beginPath();
+          ctx.arc(kp.x, kp.y, 5, 0, Math.PI*2);
+          ctx.fillStyle = "red";
+          ctx.fill();
+        }
+      });
     }
   });
+
   countDisplay.textContent = validCount;
 
-  // 人が1人以上いれば音
   if(validCount>0) alertSound.play();
 
   requestAnimationFrame(detect);
 }
 
-// 写真撮影
+// 写真撮影（検出結果なし）
 photoBtn.addEventListener('click', ()=>{
   const photoCanvas = document.createElement('canvas');
   photoCanvas.width = video.videoWidth;
   photoCanvas.height = video.videoHeight;
   const pctx = photoCanvas.getContext('2d');
-  pctx.drawImage(video,0,0,photoCanvas.width,photoCanvas.height);
+  pctx.drawImage(video,0,0,photoCanvas.width,photoCanvas.height); // キーポイント描画なし
   const dataURL = photoCanvas.toDataURL('image/png');
 
-  // ダウンロード
   const a = document.createElement('a');
   a.href = dataURL;
   a.download = 'photo.png';
