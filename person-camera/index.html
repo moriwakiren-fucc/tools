@@ -3,17 +3,56 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>人物検出アラート＋撮影（精度向上版）</title>
+<title>人間感知器</title>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
 <style>
   body { font-family: sans-serif; padding: 16px; background: #f7f7f7; transition: background-color 0.2s; }
-  canvas { border: 1px solid #333; }
-  button, input { margin: 4px; }
+  canvas { border: 1px solid #333; margin-top: 12px; }
+  button, input { margin: 4px; font-size: 16px; padding: 10px 16px; border-radius: 6px; cursor: pointer; }
+
+  /* 検出開始ボタンを目立たせる */
+  #startBtn {
+    background-color: #28a745; /* 緑 */
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+    padding: 14px 24px;
+    border: none;
+    border-radius: 8px;
+    transition: background-color 0.2s, transform 0.1s;
+  }
+  #startBtn:hover {
+    background-color: #218838;
+    transform: scale(1.05);
+  }
+  #startBtn:active {
+    background-color: #1e7e34;
+    transform: scale(0.98);
+  }
+
+  /* 他ボタンは少し控えめに */
+  #switchBtn, #photoBtn {
+    background-color: #007bff;
+    color: white;
+    font-size: 16px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+  }
+  #switchBtn:hover, #photoBtn:hover {
+    background-color: #0069d9;
+  }
+
+  /* 精度閾値スライダー */
+  input[type=range] {
+    vertical-align: middle;
+    width: 200px;
+  }
 </style>
 </head>
 <body>
-<h1>人物検出＋撮影＋赤点滅（精度向上版）</h1>
+<h1>人間感知器</h1>
 
 <button id="startBtn">検出開始</button>
 <button id="switchBtn">カメラ切替</button>
