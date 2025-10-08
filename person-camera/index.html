@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>人物検出アラート＋撮影（音対策済み）</title>
+<title>人物検出アラート＋写真（元画像保存）</title>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
 <style>
@@ -13,7 +13,7 @@
 </style>
 </head>
 <body>
-<h1>複数人物検出＋撮影（音対策済み）</h1>
+<h1>複数人物検出＋写真（元画像保存）</h1>
 
 <button id="switchBtn">カメラ切替</button>
 <button id="photoBtn">写真撮影</button>
@@ -21,7 +21,9 @@
 <p id="status">モデル読み込み中...</p>
 <p>検出人数: <span id="count">0</span></p>
 
-<video id="video" autoplay playsinline width="640" height="480"></video>
+<!-- 元動画を画面に表示 -->
+<video id="video" autoplay playsinline style="width:640px; height:auto;"></video>
+<!-- 検出結果表示用 Canvas -->
 <canvas id="canvas" width="640" height="480"></canvas>
 
 <audio id="alertSound" src="alert.mp3" preload="auto"></audio>
@@ -30,14 +32,14 @@
 let detector, video, ctx;
 let currentFacingMode = "environment";
 let stream;
-let audioInitialized = false; // ✅ AudioContext 初期化フラグ
+let audioInitialized = false;
 const alertSound = document.getElementById('alertSound');
 const switchBtn = document.getElementById('switchBtn');
 const photoBtn = document.getElementById('photoBtn');
 const countDisplay = document.getElementById('count');
 const scoreThreshold = document.getElementById('scoreThreshold');
 
-// --- AudioContext 初期化（ユーザー操作で） ---
+// --- Audio 初期化（ユーザー操作時） ---
 function initAudioOnUserGesture() {
   if(!audioInitialized){
     alertSound.play().then(()=>{ alertSound.pause(); alertSound.currentTime=0; });
@@ -63,9 +65,10 @@ async function initModel() {
 }
 
 async function detect() {
-  const poses = await detector.estimatePoses(video);
-  ctx.drawImage(video,0,0,640,480);
+  // Canvas は動画フレームと検出結果を描画
+  ctx.drawImage(video,0,0,video.videoWidth,video.videoHeight);
 
+  const poses = await detector.estimatePoses(video);
   const threshold = parseFloat(scoreThreshold.value);
   let validCount = 0;
 
@@ -73,7 +76,7 @@ async function detect() {
     const avgScore = person.keypoints.reduce((a,b)=>a+(b.score||0),0)/person.keypoints.length;
     if(avgScore >= threshold){
       validCount++;
-      // キーポイント描画
+      // 検出結果を描画
       person.keypoints.forEach(kp=>{
         if(kp.score > threshold){
           ctx.beginPath();
@@ -87,23 +90,24 @@ async function detect() {
 
   countDisplay.textContent = validCount;
 
-  // 音再生（AudioContext 初期化済みなら）
+  // 音再生
   if(validCount>0 && audioInitialized){
     alertSound.currentTime = 0;
-    alertSound.play().catch(()=>{ /* 自動再生ブロックは無視 */ });
+    alertSound.play().catch(()=>{});
   }
 
   requestAnimationFrame(detect);
 }
 
-// --- 写真撮影（検出結果なし） ---
+// --- 写真撮影（検出なしの元動画を保存） ---
 photoBtn.addEventListener('click', ()=>{
-  initAudioOnUserGesture(); // ✅ 初回ユーザー操作で AudioContext 初期化
+  initAudioOnUserGesture(); // 初回ユーザー操作で音再生可能に
   const photoCanvas = document.createElement('canvas');
   photoCanvas.width = video.videoWidth;
   photoCanvas.height = video.videoHeight;
   const pctx = photoCanvas.getContext('2d');
-  pctx.drawImage(video,0,0,photoCanvas.width,photoCanvas.height); // キーポイントなし
+  // 動画フレームそのまま描画（検出結果なし）
+  pctx.drawImage(video,0,0,photoCanvas.width,photoCanvas.height);
   const dataURL = photoCanvas.toDataURL('image/png');
   const a = document.createElement('a');
   a.href = dataURL;
@@ -113,7 +117,7 @@ photoBtn.addEventListener('click', ()=>{
 
 // --- カメラ切替 ---
 switchBtn.addEventListener('click', async ()=>{
-  initAudioOnUserGesture(); // ✅ 初回ユーザー操作で AudioContext 初期化
+  initAudioOnUserGesture();
   currentFacingMode = currentFacingMode==='environment'?'user':'environment';
   await initCamera();
 });
