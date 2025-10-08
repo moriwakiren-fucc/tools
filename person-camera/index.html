@@ -1,324 +1,71 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Person Alert — Pose + SSD + Motion</title>
-<style>
-body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP",sans-serif;margin:0;padding:16px;background:#f7f7f7}
-#wrap{max-width:980px;margin:0 auto}
-video{width:100%;height:auto;background:#000;border-radius:8px;display:block}
-canvas{position:absolute;left:0;top:0;pointer-events:none}
-.controls{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.status{font-weight:600}
-.small{font-size:0.9rem;color:#555}
-#historyList{list-style:none;padding:0;margin:0;max-height:200px;overflow:auto;border:1px solid #ddd;border-radius:6px;padding:4px;background:#fff}
-#historyList li{padding:4px;border-bottom:1px dashed #eee;font-size:0.9rem}
-label.inline{display:flex;gap:6px;align-items:center}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>人物検出アラート</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
 </head>
 <body>
-<div id="wrap">
-  <h1>人検出（姿勢+物体+動き）</h1>
+  <h1>人物検出アラート（MoveNet Thunder版）</h1>
+  <video id="video" autoplay playsinline style="width:640px; height:auto; border:1px solid #ccc;"></video>
+  <canvas id="canvas" width="640" height="480" style="border:1px solid #333;"></canvas>
+  <audio id="alertSound" src="alert.mp3" preload="auto"></audio>
+  <p id="status">モデルを読み込み中...</p>
 
-  <div style="position:relative;">
-    <video id="video" autoplay playsinline muted></video>
-    <canvas id="overlay"></canvas>
-  </div>
+  <script>
+    let detector, video, ctx;
+    const alertSound = document.getElementById('alertSound');
 
-  <div class="controls">
-    <button id="startBtn">カメラ開始</button>
-    <button id="switchBtn">カメラ切替</button>
-    <label class="inline"><input id="usePose" type="checkbox" checked> Pose (MoveNet)</label>
-    <label class="inline"><input id="useSSD" type="checkbox" checked> SSD (coco-ssd)</label>
-    <label class="inline"><input id="useMotion" type="checkbox" checked> Motion</label>
-    <label class="small">しきい値(総合): <input id="globalThreshold" type="range" min="0.1" max="0.95" step="0.05" value="0.5"></label>
-    <div class="status" id="status">ステータス: 停止</div>
-  </div>
-
-  <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-    <label class="small">Pose閾値: <input id="poseThreshold" type="range" min="0.05" max="0.8" step="0.05" value="0.25"></label>
-    <label class="small">SSD閾値: <input id="ssdThreshold" type="range" min="0.2" max="0.95" step="0.05" value="0.55"></label>
-    <label class="small">Motion閾値: <input id="motionThreshold" type="range" min="2" max="60" step="1" value="12"></label>
-    <label class="small">スムージング窓: <input id="smoothWindow" type="number" min="1" max="10" value="3" style="width:68px"></label>
-  </div>
-
-  <h2 style="margin-top:12px">検出履歴</h2>
-  <ul id="historyList"></ul>
-  <button id="clearHistoryBtn">履歴削除</button>
-
-  <p class="small" style="margin-top:8px">HTTPS または localhost で実行してください。MoveNet (Lightning/Thunder) の切替や精度向上はオプションです。</p>
-</div>
-
-<audio id="beep" preload="auto">
-  <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=" type="audio/wav">
-</audio>
-
-<!-- TFJS + models -->
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
-
-<script>
-const video = document.getElementById('video');
-const overlay = document.getElementById('overlay');
-const ctx = overlay.getContext('2d');
-
-const startBtn = document.getElementById('startBtn');
-const switchBtn = document.getElementById('switchBtn');
-const statusEl = document.getElementById('status');
-const beep = document.getElementById('beep');
-
-const usePose = document.getElementById('usePose');
-const useSSD = document.getElementById('useSSD');
-const useMotion = document.getElementById('useMotion');
-
-const globalThreshold = document.getElementById('globalThreshold');
-const poseThreshold = document.getElementById('poseThreshold');
-const ssdThreshold = document.getElementById('ssdThreshold');
-const motionThreshold = document.getElementById('motionThreshold');
-const smoothWindowInput = document.getElementById('smoothWindow');
-
-const historyList = document.getElementById('historyList');
-const clearHistoryBtn = document.getElementById('clearHistoryBtn');
-
-let poseDetector = null;
-let ssdModel = null;
-let stream = null;
-let devices = [];
-let currentIndex = 0;
-
-let detectLoopFlag = false;
-let lastDetected = false;
-let lastBeepAt = 0;
-const BEEP_COOLDOWN = 4000;
-let detectInterval = 250;
-
-let poseScores = []; // スムージング用
-let ssdScores = [];
-let motionScores = [];
-let detectionHistory = [];
-
-const offscreen = document.createElement('canvas');
-const offCtx = offscreen.getContext('2d');
-
-async function listCameras(){
-  const all = await navigator.mediaDevices.enumerateDevices();
-  devices = all.filter(d => d.kind === 'videoinput');
-}
-
-async function startCamera(index = 0){
-  if(stream) stream.getTracks().forEach(t=>t.stop());
-  try{
-    const deviceId = devices[index] ? devices[index].deviceId : undefined;
-    stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: deviceId ? { exact: deviceId } : undefined }, audio: false });
-    video.srcObject = stream;
-    await video.play();
-    overlay.width = video.videoWidth;
-    overlay.height = video.videoHeight;
-    offscreen.width = Math.max(160, Math.floor(video.videoWidth/4));
-    offscreen.height = Math.max(120, Math.floor(video.videoHeight/4));
-    currentIndex = index;
-  }catch(e){
-    alert('カメラ起動失敗: ' + e.message);
-  }
-}
-
-async function loadModels(){
-  statusEl.textContent = 'ステータス: モデル読み込み中...';
-  if(usePose.checked){
-    poseDetector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING });
-  }
-  if(useSSD.checked){
-    ssdModel = await cocoSsd.load();
-  }
-  statusEl.textContent = 'ステータス: モデル読み込み完了';
-}
-
-function drawSSDBoxes(predictions){
-  predictions.forEach(p=>{
-    if(p.class === 'person' && p.score >= parseFloat(ssdThreshold.value)){
-      const [x,y,w,h] = p.bbox;
-      ctx.strokeStyle = 'rgba(255,0,0,0.9)';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(x,y,w,h);
-      ctx.fillStyle = 'rgba(255,0,0,0.9)';
-      ctx.fillText(`${(p.score*100).toFixed(0)}%`, x+4, y>16? y-4: y+14);
+    async function initCamera() {
+      video = document.getElementById('video');
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480 }
+      });
+      video.srcObject = stream;
+      await new Promise(resolve => video.onloadedmetadata = resolve);
     }
-  });
-}
 
-function drawPose(poses){
-  poses.forEach(pose=>{
-    pose.keypoints.forEach(k=>{
-      if((k.score || 0) > 0.2){
-        ctx.beginPath();
-        ctx.arc(k.x, k.y, 3, 0, Math.PI*2);
-        ctx.fillStyle = 'lime';
-        ctx.fill();
+    async function initModel() {
+      // ✅ MoveNet Thunder に切り替え
+      detector = await poseDetection.createDetector(
+        poseDetection.SupportedModels.MoveNet,
+        { modelType: poseDetection.movenet.modelType.THUNDER } // ←ここが重要
+      );
+      document.getElementById('status').innerText = "モデル準備完了";
+    }
+
+    async function detect() {
+      const poses = await detector.estimatePoses(video);
+      ctx.drawImage(video, 0, 0, 640, 480);
+
+      if (poses.length > 0) {
+        // 関節点を描画
+        poses[0].keypoints.forEach(kp => {
+          if (kp.score > 0.3) {
+            ctx.beginPath();
+            ctx.arc(kp.x, kp.y, 5, 0, Math.PI * 2);
+            ctx.fillStyle = "red";
+            ctx.fill();
+          }
+        });
+
+        // 人物が検出されたら音を鳴らす
+        alertSound.play();
       }
-    });
-    // 軽い線でつなぐ（肩-腰など）
-    const pairs = [[5,7],[6,8],[5,6],[11,12],[5,11],[6,12]];
-    pairs.forEach(([a,b])=>{
-      const A = pose.keypoints[a], B = pose.keypoints[b];
-      if(A && B && (A.score||0)>0.2 && (B.score||0)>0.2){
-        ctx.beginPath();
-        ctx.moveTo(A.x,A.y);
-        ctx.lineTo(B.x,B.y);
-        ctx.strokeStyle='lime';
-        ctx.lineWidth=2;
-        ctx.stroke();
-      }
-    });
-  });
-}
 
-function addHistory(text){
-  const li = document.createElement('li');
-  li.textContent = text;
-  historyList.prepend(li);
-  detectionHistory.unshift(text);
-}
-
-function computeMotionScore(){
-  try{
-    offCtx.drawImage(video, 0, 0, offscreen.width, offscreen.height);
-    const img = offCtx.getImageData(0,0,offscreen.width,offscreen.height);
-    const data = img.data;
-    let sum = 0;
-    for(let i=0;i<data.length;i+=4){
-      // グレースケール化
-      const g = (data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114)|0;
-      const idx = i/4;
-      const prev = img._prev ? img._prev[idx] : g;
-      sum += Math.abs(g - prev);
-      if(!img._prev) { img._prev = []; }
-      img._prev[idx] = g;
-    }
-    // 平均差分を返す（単純化）
-    return sum / (offscreen.width*offscreen.height);
-  }catch(e){
-    return 0;
-  }
-}
-
-async function detectLoop(){
-  if(!detectLoopFlag) return;
-  if(video.paused || video.ended) { setTimeout(detectLoop, detectInterval); return; }
-  const tStart = performance.now();
-  ctx.clearRect(0,0,overlay.width,overlay.height);
-
-  const poseOn = usePose.checked && !!poseDetector;
-  const ssdOn = useSSD.checked && !!ssdModel;
-  const motionOn = useMotion.checked;
-
-  let poseScore = 0;
-  let ssdScore = 0;
-  let motionScore = 0;
-
-  try{
-    // 並列でモデル推論（存在するものだけ）
-    const tasks = [];
-    if(ssdOn) tasks.push(ssdModel.detect(video));
-    if(poseOn) tasks.push(poseDetector.estimatePoses(video));
-    const results = await Promise.all(tasks);
-
-    let rIndex = 0;
-    if(ssdOn){
-      const ssdPreds = results[rIndex++];
-      drawSSDBoxes(ssdPreds);
-      const personScores = ssdPreds.filter(p=>p.class==='person').map(p=>p.score);
-      ssdScore = personScores.length ? Math.max(...personScores) : 0;
-      ssdScores.push(ssdScore);
-      if(ssdScores.length > parseInt(smoothWindowInput.value)) ssdScores.shift();
-    }
-    if(poseOn){
-      const poses = results[rIndex++];
-      if(poses && poses.length){
-        drawPose(poses);
-        // keypoints平均スコアで代表値を作る
-        const kps = poses[0].keypoints.map(k=>k.score||0);
-        poseScore = kps.reduce((a,b)=>a+b,0)/kps.length;
-      }else{
-        poseScore = 0;
-      }
-      poseScores.push(poseScore);
-      if(poseScores.length > parseInt(smoothWindowInput.value)) poseScores.shift();
+      requestAnimationFrame(detect);
     }
 
-    if(motionOn){
-      motionScore = computeMotionScore();
-      motionScores.push(motionScore);
-      if(motionScores.length > parseInt(smoothWindowInput.value)) motionScores.shift();
+    async function main() {
+      await initCamera();
+      ctx = document.getElementById('canvas').getContext('2d');
+      await initModel();
+      detect();
     }
 
-    // スムージング平均を取る
-    const avgPose = poseScores.length ? (poseScores.reduce((a,b)=>a+b,0)/poseScores.length) : 0;
-    const avgSSD = ssdScores.length ? (ssdScores.reduce((a,b)=>a+b,0)/ssdScores.length) : 0;
-    const avgMotion = motionScores.length ? (motionScores.reduce((a,b)=>a+b,0)/motionScores.length) : 0;
-
-    // 正規化して総合スコアを作る（motionは別スケールなので重みを小さめに）
-    const combined = Math.max( avgSSD, avgPose, Math.min(1, avgMotion / (parseFloat(motionThreshold.value)||12)) );
-    const globalTh = parseFloat(globalThreshold.value);
-
-    const personDetected = combined >= globalTh;
-
-    if(personDetected && !lastDetected){
-      const now = Date.now();
-      if(beep && (now - lastBeepAt) > BEEP_COOLDOWN){
-        beep.currentTime = 0;
-        await beep.play().catch(()=>{});
-        lastBeepAt = now;
-      }
-      addHistory(`${new Date().toLocaleString()} 検出 (ssd=${avgSSD.toFixed(2)}, pose=${avgPose.toFixed(2)}, motion=${avgMotion.toFixed(1)})`);
-    }
-
-    lastDetected = personDetected;
-    statusEl.textContent = 'ステータス: ' + (personDetected ? '人を検出' : '未検出');
-
-  }catch(e){
-    console.error('検出エラー', e);
-  }finally{
-    const tEnd = performance.now();
-    const elapsed = tEnd - tStart;
-    const wait = Math.max(0, detectInterval - elapsed);
-    setTimeout(detectLoop, wait);
-  }
-}
-
-startBtn.addEventListener('click', async ()=>{
-  startBtn.disabled = true;
-  await listCameras();
-  await startCamera(currentIndex);
-  await loadModels();
-  if(!detectLoopFlag){
-    detectLoopFlag = true;
-    detectLoop();
-  }
-  startBtn.disabled = false;
-});
-
-switchBtn.addEventListener('click', async ()=>{
-  if(devices.length > 1){
-    currentIndex = (currentIndex + 1) % devices.length;
-    await startCamera(currentIndex);
-  }else{
-    alert('切替可能なカメラがありません');
-  }
-});
-
-clearHistoryBtn.addEventListener('click', ()=>{
-  detectionHistory.length = 0;
-  historyList.innerHTML = '';
-});
-
-window.addEventListener('resize', ()=>{
-  if(video.videoWidth){
-    overlay.width = video.videoWidth;
-    overlay.height = video.videoHeight;
-  }
-});
-</script>
+    main();
+  </script>
 </body>
 </html>
