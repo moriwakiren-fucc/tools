@@ -1,202 +1,196 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>列車時刻検索</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Person Alert Advanced</title>
 <style>
-  body { font-family: sans-serif; margin: 20px; }
-  label { margin-right: 5px; }
-  input, select, button { margin: 5px; padding: 4px 8px; font-size: 14px; }
-  table { border-collapse: separate; border-spacing: 20px 8px; margin-top: 10px; }
-  td { padding: 4px 8px; text-align: center; }
-  h3 { margin-top: 30px; }
-  .search-block { margin-bottom: 30px; }
-
-  /* 横並び用のレイアウト */
-  .results {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 30px;               /* 上りと下りの間隔 */
-    margin-top: 10px;
-  }
-  .result-block {
-    flex: 1 1 300px;         /* 幅が確保できれば横並び */
-    min-width: 300px;        /* 狭いときは自動で縦並び */
-  }
-  @media (max-width: 950px) {
-    .results {
-      flex-direction: column; /* 狭い画面では縦並び */
-    }
-  }
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP",sans-serif;margin:0;padding:16px;background:#f7f7f7}
+#wrap{max-width:960px;margin:0 auto}
+video{width:100%;height:auto;background:#000;border-radius:8px}
+canvas{position:absolute;left:0;top:0;pointer-events:none}
+.controls{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.status{font-weight:600}
+.small{font-size:0.9rem;color:#555}
+#historyList{list-style:none;padding:0;margin:0}
+#historyList li{padding:4px;border-bottom:1px solid #ccc;font-size:0.9rem}
 </style>
 </head>
 <body>
+<div id="wrap">
+<h1>カメラ検出通知（切替・履歴付き）</h1>
 
-<h2>列車時刻検索</h2>
-
-<!-- 第1検索 -->
-<div class="search-block">
-  <h3>第1検索</h3>
-  <label>路線:</label>
-  <select id="lineSelect1">
-    <option value="NPH">日豊本線</option>
-    <option value="KDH">久大本線</option>
-    <option value="HHH">豊肥本線</option>
-  </select>
-
-  <label>駅名:</label>
-  <input type="text" id="stationInput1" value="大分">
-
-  <label>時刻:</label>
-  <input type="time" id="timeInput1">
-
-  <button id="searchBtn1">検索</button>
-
-  <div class="results">
-    <div class="result-block">
-      <h4>上り</h4>
-      <div id="result1_up"></div>
-    </div>
-    <div class="result-block">
-      <h4>下り</h4>
-      <div id="result1_down"></div>
-    </div>
-  </div>
+<div style="position:relative;">
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="overlay"></canvas>
 </div>
 
-<!-- 第2検索 -->
-<div class="search-block">
-  <h3>第2検索</h3>
-  <label>路線:</label>
-  <select id="lineSelect2">
-    <option value="NPH">日豊本線</option>
-    <option value="KDH">久大本線</option>
-    <option value="HHH">豊肥本線</option>
-  </select>
-
-  <label>駅名:</label>
-  <input type="text" id="stationInput2" value="大分">
-
-  <label>時刻:</label>
-  <input type="time" id="timeInput2">
-
-  <button id="searchBtn2">検索</button>
-
-  <div class="results">
-    <div class="result-block">
-      <h4>上り</h4>
-      <div id="result2_up"></div>
-    </div>
-    <div class="result-block">
-      <h4>下り</h4>
-      <div id="result2_down"></div>
-    </div>
-  </div>
+<div class="controls">
+  <button id="startBtn">カメラ開始</button>
+  <select id="cameraSelect"></select>
+  <button id="switchBtn">カメラ切替</button>
+  <label><input id="soundToggle" type="checkbox" checked> 音を鳴らす</label>
+  <label class="small">しきい値: <input id="threshold" type="range" min="0.3" max="0.95" step="0.05" value="0.6"></label>
+  <div class="status" id="status">ステータス: 停止</div>
 </div>
+
+<h2>検出履歴</h2>
+<ul id="historyList"></ul>
+<button id="clearHistoryBtn">履歴削除</button>
+
+<p class="small">HTTPS または localhost で実行してください。</p>
+</div>
+
+<audio id="beep" preload="auto">
+  <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=" type="audio/wav">
+</audio>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
 
 <script>
-const CANDIDATE_COUNT = 5;
+const video = document.getElementById('video');
+const overlay = document.getElementById('overlay');
+const ctx = overlay.getContext('2d');
+const startBtn = document.getElementById('startBtn');
+const cameraSelect = document.getElementById('cameraSelect');
+const switchBtn = document.getElementById('switchBtn');
+const statusEl = document.getElementById('status');
+const beep = document.getElementById('beep');
+const soundToggle = document.getElementById('soundToggle');
+const thresholdSlider = document.getElementById('threshold');
+const historyList = document.getElementById('historyList');
+const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 
-// ✅ 路線ごとのCSVパス
-const csv_paths = {
-  NPH: { up: "CSV_db/CSV_1_NPHs-NBR_db.csv", down: "CSV_db/CSV_2_NPHs-KDR_db.csv" },
-  KDH: { up: "CSV_db/CSV_3_KDHs-NBR_db.csv", down: "CSV_db/CSV_4_KDHs-KDR_db.csv" },
-  HHH: { up: "CSV_db/CSV_5_HHHs-NBR_db.csv", down: "CSV_db/CSV_6_HHHs-KDR_db.csv" }
-};
+let model=null;
+let stream=null;
+let currentDeviceId=null;
+let detecting=false;
+let lastPersonState=false;
+let lastBeepAt=0;
+const BEEP_COOLDOWN=5000;
+let detectInterval=300;
+const history=[];
+const SMOOTH_WINDOW=3;  // 直近N回の検出で平均をとる
 
-// CSVキャッシュ
-const csvCache = {};
-
-// CSV読み込み
-async function loadCSV(path) {
-  if (!path) return [];
-  if (csvCache[path]) return csvCache[path];
-
-  const res = await fetch(path);
-  const text = await res.text();
-  csvCache[path] = text.trim().split('\n').map(row => row.split(','));
-  return csvCache[path];
-}
-
-// 時刻を分に変換
-function timeToMinutes(t) {
-  const [h, m] = t.split(':').map(Number);
-  return h * 60 + m;
-}
-
-// 表を作成
-function buildTable(csvData, station, inputTime) {
-  const targetRowIndex = csvData.findIndex(row => row[0] === station + " 発");
-  if (targetRowIndex === -1) return "<p>該当する駅が見つかりません。</p>";
-
-  const row = csvData[targetRowIndex];
-  const inputMin = timeToMinutes(inputTime);
-
-  // 入力時刻以降を取得して時刻順に並べる
-  let allTimes = [];
-  for (let c = 1; c < row.length; c++) {
-    const t = row[c];
-    if (t && /^\d{1,2}:\d{2}$/.test(t)) {
-      const tm = timeToMinutes(t);
-      if (tm >= inputMin) {
-        allTimes.push({col: c, time: t, minutes: tm});
-      }
-    }
-  }
-  allTimes.sort((a,b) => a.minutes - b.minutes);
-
-  const nextTimes = allTimes.slice(0, CANDIDATE_COUNT);
-  if (nextTimes.length === 0) return "<p>該当する候補が見つかりません。</p>";
-
-  // 表構築
-  let html = "<table>";
-  nextTimes.forEach(candidate => {
-    html += "<tr>";
-    [1,2,3,5].forEach(r => {
-      html += `<td>${csvData[r-1][candidate.col] || ''}</td>`;
-    });
-    html += `<td>${csvData[targetRowIndex][candidate.col] || ''}</td>`;
-    html += "</tr>";
+async function listCameras(){
+  const devices=await navigator.mediaDevices.enumerateDevices();
+  cameraSelect.innerHTML='';
+  devices.filter(d=>d.kind==='videoinput').forEach(d=>{
+    const opt=document.createElement('option');
+    opt.value=d.deviceId;
+    opt.textContent=d.label || `カメラ${cameraSelect.length+1}`;
+    cameraSelect.appendChild(opt);
   });
-  html += "</table>";
-  return html;
 }
 
-// ✅ 検索関数（上下線両方）
-async function search(lineKey, station, time, upResultId, downResultId) {
-  if (!station || !time) return;
-
-  const upCSV = await loadCSV(csv_paths[lineKey].up);
-  const downCSV = await loadCSV(csv_paths[lineKey].down);
-
-  document.getElementById(upResultId).innerHTML = buildTable(upCSV, station, time);
-  document.getElementById(downResultId).innerHTML = buildTable(downCSV, station, time);
+async function startCamera(deviceId){
+  if(stream){
+    stream.getTracks().forEach(t=>t.stop());
+  }
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{deviceId:deviceId?{exact:deviceId}:undefined},audio:false});
+    video.srcObject=stream;
+    await video.play();
+    overlay.width=video.videoWidth;
+    overlay.height=video.videoHeight;
+    currentDeviceId=deviceId||null;
+  }catch(e){
+    alert('カメラ起動失敗: '+e.message);
+  }
 }
 
-// イベント登録
-document.getElementById('searchBtn1').addEventListener('click', () => {
-  const line = document.getElementById('lineSelect1').value;
-  const station = document.getElementById('stationInput1').value.trim();
-  const time = document.getElementById('timeInput1').value;
-  search(line, station, time, 'result1_up', 'result1_down');
+async function loadModel(){
+  statusEl.textContent='ステータス: モデル読み込み中...';
+  model=await cocoSsd.load();
+  statusEl.textContent='ステータス: モデル読み込み完了';
+}
+
+function drawBoxes(predictions){
+  ctx.clearRect(0,0,overlay.width,overlay.height);
+  ctx.lineWidth=2;
+  ctx.font='16px sans-serif';
+  predictions.forEach(p=>{
+    if(p.class==='person'){
+      const[x,y,w,h]=p.bbox;
+      ctx.strokeStyle='red';
+      ctx.strokeRect(x,y,w,h);
+      const label=`${p.class} ${(p.score*100).toFixed(0)}%`;
+      ctx.fillStyle='red';
+      ctx.fillText(label,x+4,y>16?y-4:y+16);
+    }
+  });
+}
+
+function addHistoryEntry(text){
+  const li=document.createElement('li');
+  li.textContent=text;
+  historyList.prepend(li);
+  history.unshift(text);
+}
+
+async function detectLoop(){
+  if(!model||video.paused||video.ended) return;
+  const now=performance.now();
+  const threshold=parseFloat(thresholdSlider.value);
+  try{
+    const predictions=await model.detect(video);
+    drawBoxes(predictions);
+    const personScores=predictions.filter(p=>p.class==='person').map(p=>p.score);
+    const maxScore=personScores.length?Math.max(...personScores):0;
+
+    // 簡易スムージング
+    history.push(maxScore);
+    if(history.length>SMOOTH_WINDOW) history.splice(SMOOTH_WINDOW);
+    const avgScore=history.reduce((a,b)=>a+b,0)/history.length;
+
+    const personDetected=avgScore>=threshold;
+
+    if(personDetected && !lastPersonState){
+      const elapsed=now-lastBeepAt;
+      if(soundToggle.checked && elapsed>BEEP_COOLDOWN){
+        beep.currentTime=0;
+        await beep.play().catch(()=>{});
+        lastBeepAt=now;
+      }
+      const t=new Date().toLocaleTimeString();
+      addHistoryEntry(`${t} 検出 (score=${maxScore.toFixed(2)})`);
+    }
+    lastPersonState=personDetected;
+    statusEl.textContent='ステータス: '+(personDetected?'人を検出':'未検出');
+  }catch(e){
+    console.error('検出エラー',e);
+  }finally{
+    if(detecting) setTimeout(detectLoop,detectInterval);
+  }
+}
+
+startBtn.addEventListener('click',async()=>{
+  startBtn.disabled=true;
+  await listCameras();
+  await startCamera(cameraSelect.value);
+  if(!model) await loadModel();
+  if(!detecting){ detecting=true; detectLoop(); }
+  startBtn.disabled=false;
 });
 
-document.getElementById('searchBtn2').addEventListener('click', () => {
-  const line = document.getElementById('lineSelect2').value;
-  const station = document.getElementById('stationInput2').value.trim();
-  const time = document.getElementById('timeInput2').value;
-  search(line, station, time, 'result2_up', 'result2_down');
+switchBtn.addEventListener('click',async()=>{
+  if(cameraSelect.value!==currentDeviceId){
+    await startCamera(cameraSelect.value);
+  }
 });
 
-// 初期化
-window.addEventListener('DOMContentLoaded', () => {
-  const now = new Date();
-  const defaultTime = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  document.getElementById('timeInput1').value = defaultTime;
-  document.getElementById('timeInput2').value = defaultTime;
+clearHistoryBtn.addEventListener('click',()=>{
+  historyList.innerHTML='';
+  history.length=0;
+});
+
+window.addEventListener('resize',()=>{
+  if(video.videoWidth){
+    overlay.width=video.videoWidth;
+    overlay.height=video.videoHeight;
+  }
 });
 </script>
-
 </body>
 </html>
