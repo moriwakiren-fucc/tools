@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>人物検出アラート＋撮影（AudioContext＋赤点滅）</title>
+<title>人物検出アラート＋撮影（音＋赤点滅安定版）</title>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
 <style>
@@ -13,7 +13,7 @@
 </style>
 </head>
 <body>
-<h1>人物検出＋撮影＋赤点滅</h1>
+<h1>人物検出＋撮影＋赤点滅（安定版）</h1>
 
 <button id="startBtn">検出開始</button>
 <button id="switchBtn">カメラ切替</button>
@@ -41,20 +41,28 @@ const photoBtn = document.getElementById('photoBtn');
 const countDisplay = document.getElementById('count');
 const scoreThreshold = document.getElementById('scoreThreshold');
 
-// --- AudioContext 初期化 ---
+// --- AudioContext 初期化（ユーザー操作で必ず実行） ---
 async function initAudioOnUserGesture() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const response = await fetch('alert.mp3'); // 音声ファイルを準備
+
+    // 音声ファイル読み込み
+    const response = await fetch('alert.mp3');
     const arrayBuffer = await response.arrayBuffer();
     audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+    // 自動再生許可取得用に短時間再生
+    const source = audioCtx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(audioCtx.destination);
+    source.start(0);
+    source.stop(audioCtx.currentTime + 0.01); // 10msだけ再生
   }
 }
 
-// --- 音を鳴らす + 背景赤点滅 ---
+// --- 音を鳴らす＋赤点滅 ---
 function playAlert() {
   if (!audioCtx || !audioBuffer || isPlaying) return;
-
   const source = audioCtx.createBufferSource();
   source.buffer = audioBuffer;
   source.connect(audioCtx.destination);
@@ -116,13 +124,12 @@ async function detect() {
         }
       });
 
-      // 音再生 + 赤点滅
+      // 検出時に音＋赤点滅
       playAlert();
     }
   });
 
   countDisplay.textContent = validCount;
-
   requestAnimationFrame(detect);
 }
 
@@ -143,7 +150,7 @@ photoBtn.addEventListener('click', ()=>{
 
 // --- カメラ切替 ---
 switchBtn.addEventListener('click', async ()=>{
-  initAudioOnUserGesture();
+  await initAudioOnUserGesture();
   currentFacingMode = currentFacingMode==='environment'?'user':'environment';
   await initCamera();
 });
