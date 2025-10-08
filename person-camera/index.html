@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>人物検出アラート＋撮影</title>
+<title>人物検出アラート＋撮影（音対策済み）</title>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
 <style>
@@ -13,7 +13,7 @@
 </style>
 </head>
 <body>
-<h1>複数人物検出＋撮影</h1>
+<h1>複数人物検出＋撮影（音対策済み）</h1>
 
 <button id="switchBtn">カメラ切替</button>
 <button id="photoBtn">写真撮影</button>
@@ -30,11 +30,20 @@
 let detector, video, ctx;
 let currentFacingMode = "environment";
 let stream;
+let audioInitialized = false; // ✅ AudioContext 初期化フラグ
 const alertSound = document.getElementById('alertSound');
 const switchBtn = document.getElementById('switchBtn');
 const photoBtn = document.getElementById('photoBtn');
 const countDisplay = document.getElementById('count');
 const scoreThreshold = document.getElementById('scoreThreshold');
+
+// --- AudioContext 初期化（ユーザー操作で） ---
+function initAudioOnUserGesture() {
+  if(!audioInitialized){
+    alertSound.play().then(()=>{ alertSound.pause(); alertSound.currentTime=0; });
+    audioInitialized = true;
+  }
+}
 
 async function initCamera() {
   if(stream) stream.getTracks().forEach(track=>track.stop());
@@ -64,7 +73,7 @@ async function detect() {
     const avgScore = person.keypoints.reduce((a,b)=>a+(b.score||0),0)/person.keypoints.length;
     if(avgScore >= threshold){
       validCount++;
-      // ✅ 検出結果を画面に描画
+      // キーポイント描画
       person.keypoints.forEach(kp=>{
         if(kp.score > threshold){
           ctx.beginPath();
@@ -78,33 +87,38 @@ async function detect() {
 
   countDisplay.textContent = validCount;
 
-  if(validCount>0) alertSound.play();
+  // 音再生（AudioContext 初期化済みなら）
+  if(validCount>0 && audioInitialized){
+    alertSound.currentTime = 0;
+    alertSound.play().catch(()=>{ /* 自動再生ブロックは無視 */ });
+  }
 
   requestAnimationFrame(detect);
 }
 
-// 写真撮影（検出結果なし）
+// --- 写真撮影（検出結果なし） ---
 photoBtn.addEventListener('click', ()=>{
+  initAudioOnUserGesture(); // ✅ 初回ユーザー操作で AudioContext 初期化
   const photoCanvas = document.createElement('canvas');
   photoCanvas.width = video.videoWidth;
   photoCanvas.height = video.videoHeight;
   const pctx = photoCanvas.getContext('2d');
-  pctx.drawImage(video,0,0,photoCanvas.width,photoCanvas.height); // キーポイント描画なし
+  pctx.drawImage(video,0,0,photoCanvas.width,photoCanvas.height); // キーポイントなし
   const dataURL = photoCanvas.toDataURL('image/png');
-
   const a = document.createElement('a');
   a.href = dataURL;
   a.download = 'photo.png';
   a.click();
 });
 
-// カメラ切替
+// --- カメラ切替 ---
 switchBtn.addEventListener('click', async ()=>{
+  initAudioOnUserGesture(); // ✅ 初回ユーザー操作で AudioContext 初期化
   currentFacingMode = currentFacingMode==='environment'?'user':'environment';
   await initCamera();
 });
 
-// メイン
+// --- メイン ---
 async function main(){
   video = document.getElementById('video');
   ctx = document.getElementById('canvas').getContext('2d');
