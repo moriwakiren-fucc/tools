@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Person Alert</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP",sans-serif;margin:0;padding:16px;background:#f7f7f7}
+    #wrap{max-width:900px;margin:0 auto}
+    video{width:100%;height:auto;background:#000;border-radius:8px}
+    canvas{position:absolute;left:0;top:0;pointer-events:none}
+    .controls{margin-top:8px;display:flex;gap:8px;align-items:center}
+    .status{font-weight:600}
+    .small{font-size:0.9rem;color:#555}
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <h1>カメラに人が映ったら音で通知</h1>
+    <div style="position:relative;">
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="overlay"></canvas>
+    </div>
+
+    <div class="controls">
+      <button id="startBtn">カメラ開始</button>
+      <label><input id="soundToggle" type="checkbox" checked> 音を鳴らす</label>
+      <label class="small">検出しきい値: <input id="threshold" type="range" min="0.1" max="0.95" step="0.05" value="0.6"></label>
+      <div class="status" id="status">ステータス: 停止</div>
+    </div>
+
+    <p class="small">注意: HTTPS または localhost で実行してください。精度は環境に依存します。</p>
+  </div>
+
+  <audio id="beep" preload="auto">
+    <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=" type="audio/wav">
+  </audio>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+
+  <script>
+    // 最小限のコメントのみ（説明は下に行ごとにします）
+    const video = document.getElementById('video');
+    const overlay = document.getElementById('overlay');
+    const ctx = overlay.getContext('2d');
+    const startBtn = document.getElementById('startBtn');
+    const statusEl = document.getElementById('status');
+    const beep = document.getElementById('beep');
+    const soundToggle = document.getElementById('soundToggle');
+    const thresholdSlider = document.getElementById('threshold');
+
+    let model = null;
+    let stream = null;
+    let detecting = false;
+    let lastPersonState = false;
+    let lastBeepAt = 0;
+    const BEEP_COOLDOWN = 5000; // 同じ検出で連続再生しないためのクールダウン（ms）
+    let detectInterval = 300; // 検出間隔（ms）
+
+    async function startCamera() {
+      if (stream) return;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+        video.srcObject = stream;
+        await video.play();
+        overlay.width = video.videoWidth;
+        overlay.height = video.videoHeight;
+      } catch (e) {
+        alert('カメラへのアクセスに失敗しました: ' + e.message);
+      }
+    }
+
+    async function loadModel() {
+      statusEl.textContent = 'ステータス: モデル読み込み中...';
+      model = await cocoSsd.load();
+      statusEl.textContent = 'ステータス: モデル読み込み完了';
+    }
+
+    function drawBoxes(predictions) {
+      ctx.clearRect(0,0,overlay.width,overlay.height);
+      ctx.lineWidth = 2;
+      ctx.font = '16px sans-serif';
+      predictions.forEach(p => {
+        if (p.class === 'person') {
+          const [x,y,w,h] = p.bbox;
+          ctx.strokeStyle = 'red';
+          ctx.strokeRect(x,y,w,h);
+          const label = `${p.class} ${(p.score*100).toFixed(0)}%`;
+          ctx.fillStyle = 'red';
+          ctx.fillText(label, x + 4, y > 16 ? y - 4 : y + 16);
+        }
+      });
+    }
+
+    async function detectLoop() {
+      if (!model || video.paused || video.ended) return;
+      const now = performance.now();
+      const threshold = parseFloat(thresholdSlider.value);
+      try {
+        const predictions = await model.detect(video);
+        drawBoxes(predictions);
+        const personDetected = predictions.some(p => p.class === 'person' && p.score >= threshold);
+        if (personDetected && !lastPersonState) {
+          const elapsed = now - lastBeepAt;
+          if (soundToggle.checked && elapsed > BEEP_COOLDOWN) {
+            beep.currentTime = 0;
+            await beep.play().catch(()=>{/* 再生拒否を無視 */});
+            lastBeepAt = now;
+          }
+        }
+        lastPersonState = personDetected;
+        statusEl.textContent = 'ステータス: ' + (personDetected ? '人を検出' : '未検出');
+      } catch (e) {
+        console.error('検出エラー', e);
+      } finally {
+        if (detecting) setTimeout(detectLoop, detectInterval);
+      }
+    }
+
+    startBtn.addEventListener('click', async () => {
+      startBtn.disabled = true;
+      await startCamera();
+      if (!model) await loadModel();
+      if (!detecting) {
+        detecting = true;
+        detectLoop();
+      }
+      startBtn.disabled = false;
+    });
+
+    // ウィンドウリサイズでキャンバスを合わせる
+    window.addEventListener('resize', () => {
+      if (video.videoWidth) {
+        overlay.width = video.videoWidth;
+        overlay.height = video.videoHeight;
+      }
+    });
+
+    // スライダーや設定で即時反映されるので UI はここでは不要（自分で調整してください）
+  </script>
+</body>
+</html>
