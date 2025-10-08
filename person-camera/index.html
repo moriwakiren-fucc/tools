@@ -1,143 +1,196 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Person Alert</title>
-  <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP",sans-serif;margin:0;padding:16px;background:#f7f7f7}
-    #wrap{max-width:900px;margin:0 auto}
-    video{width:100%;height:auto;background:#000;border-radius:8px}
-    canvas{position:absolute;left:0;top:0;pointer-events:none}
-    .controls{margin-top:8px;display:flex;gap:8px;align-items:center}
-    .status{font-weight:600}
-    .small{font-size:0.9rem;color:#555}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Person Alert Advanced</title>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP",sans-serif;margin:0;padding:16px;background:#f7f7f7}
+#wrap{max-width:960px;margin:0 auto}
+video{width:100%;height:auto;background:#000;border-radius:8px}
+canvas{position:absolute;left:0;top:0;pointer-events:none}
+.controls{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.status{font-weight:600}
+.small{font-size:0.9rem;color:#555}
+#historyList{list-style:none;padding:0;margin:0}
+#historyList li{padding:4px;border-bottom:1px solid #ccc;font-size:0.9rem}
+</style>
 </head>
 <body>
-  <div id="wrap">
-    <h1>カメラに人が映ったら音で通知</h1>
-    <div style="position:relative;">
-      <video id="video" autoplay playsinline muted></video>
-      <canvas id="overlay"></canvas>
-    </div>
+<div id="wrap">
+<h1>カメラ検出通知（切替・履歴付き）</h1>
 
-    <div class="controls">
-      <button id="startBtn">カメラ開始</button>
-      <label><input id="soundToggle" type="checkbox" checked> 音を鳴らす</label>
-      <label class="small">検出しきい値: <input id="threshold" type="range" min="0.1" max="0.95" step="0.05" value="0.6"></label>
-      <div class="status" id="status">ステータス: 停止</div>
-    </div>
+<div style="position:relative;">
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="overlay"></canvas>
+</div>
 
-    <p class="small">注意: HTTPS または localhost で実行してください。精度は環境に依存します。</p>
-  </div>
+<div class="controls">
+  <button id="startBtn">カメラ開始</button>
+  <select id="cameraSelect"></select>
+  <button id="switchBtn">カメラ切替</button>
+  <label><input id="soundToggle" type="checkbox" checked> 音を鳴らす</label>
+  <label class="small">しきい値: <input id="threshold" type="range" min="0.3" max="0.95" step="0.05" value="0.6"></label>
+  <div class="status" id="status">ステータス: 停止</div>
+</div>
 
-  <audio id="beep" preload="auto">
-    <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=" type="audio/wav">
-  </audio>
+<h2>検出履歴</h2>
+<ul id="historyList"></ul>
+<button id="clearHistoryBtn">履歴削除</button>
 
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+<p class="small">HTTPS または localhost で実行してください。</p>
+</div>
 
-  <script>
-    // 最小限のコメントのみ（説明は下に行ごとにします）
-    const video = document.getElementById('video');
-    const overlay = document.getElementById('overlay');
-    const ctx = overlay.getContext('2d');
-    const startBtn = document.getElementById('startBtn');
-    const statusEl = document.getElementById('status');
-    const beep = document.getElementById('beep');
-    const soundToggle = document.getElementById('soundToggle');
-    const thresholdSlider = document.getElementById('threshold');
+<audio id="beep" preload="auto">
+  <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=" type="audio/wav">
+</audio>
 
-    let model = null;
-    let stream = null;
-    let detecting = false;
-    let lastPersonState = false;
-    let lastBeepAt = 0;
-    const BEEP_COOLDOWN = 5000; // 同じ検出で連続再生しないためのクールダウン（ms）
-    let detectInterval = 300; // 検出間隔（ms）
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
 
-    async function startCamera() {
-      if (stream) return;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
-        video.srcObject = stream;
-        await video.play();
-        overlay.width = video.videoWidth;
-        overlay.height = video.videoHeight;
-      } catch (e) {
-        alert('カメラへのアクセスに失敗しました: ' + e.message);
-      }
+<script>
+const video = document.getElementById('video');
+const overlay = document.getElementById('overlay');
+const ctx = overlay.getContext('2d');
+const startBtn = document.getElementById('startBtn');
+const cameraSelect = document.getElementById('cameraSelect');
+const switchBtn = document.getElementById('switchBtn');
+const statusEl = document.getElementById('status');
+const beep = document.getElementById('beep');
+const soundToggle = document.getElementById('soundToggle');
+const thresholdSlider = document.getElementById('threshold');
+const historyList = document.getElementById('historyList');
+const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+
+let model=null;
+let stream=null;
+let currentDeviceId=null;
+let detecting=false;
+let lastPersonState=false;
+let lastBeepAt=0;
+const BEEP_COOLDOWN=5000;
+let detectInterval=300;
+const history=[];
+const SMOOTH_WINDOW=3;  // 直近N回の検出で平均をとる
+
+async function listCameras(){
+  const devices=await navigator.mediaDevices.enumerateDevices();
+  cameraSelect.innerHTML='';
+  devices.filter(d=>d.kind==='videoinput').forEach(d=>{
+    const opt=document.createElement('option');
+    opt.value=d.deviceId;
+    opt.textContent=d.label || `カメラ${cameraSelect.length+1}`;
+    cameraSelect.appendChild(opt);
+  });
+}
+
+async function startCamera(deviceId){
+  if(stream){
+    stream.getTracks().forEach(t=>t.stop());
+  }
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{deviceId:deviceId?{exact:deviceId}:undefined},audio:false});
+    video.srcObject=stream;
+    await video.play();
+    overlay.width=video.videoWidth;
+    overlay.height=video.videoHeight;
+    currentDeviceId=deviceId||null;
+  }catch(e){
+    alert('カメラ起動失敗: '+e.message);
+  }
+}
+
+async function loadModel(){
+  statusEl.textContent='ステータス: モデル読み込み中...';
+  model=await cocoSsd.load();
+  statusEl.textContent='ステータス: モデル読み込み完了';
+}
+
+function drawBoxes(predictions){
+  ctx.clearRect(0,0,overlay.width,overlay.height);
+  ctx.lineWidth=2;
+  ctx.font='16px sans-serif';
+  predictions.forEach(p=>{
+    if(p.class==='person'){
+      const[x,y,w,h]=p.bbox;
+      ctx.strokeStyle='red';
+      ctx.strokeRect(x,y,w,h);
+      const label=`${p.class} ${(p.score*100).toFixed(0)}%`;
+      ctx.fillStyle='red';
+      ctx.fillText(label,x+4,y>16?y-4:y+16);
     }
+  });
+}
 
-    async function loadModel() {
-      statusEl.textContent = 'ステータス: モデル読み込み中...';
-      model = await cocoSsd.load();
-      statusEl.textContent = 'ステータス: モデル読み込み完了';
-    }
+function addHistoryEntry(text){
+  const li=document.createElement('li');
+  li.textContent=text;
+  historyList.prepend(li);
+  history.unshift(text);
+}
 
-    function drawBoxes(predictions) {
-      ctx.clearRect(0,0,overlay.width,overlay.height);
-      ctx.lineWidth = 2;
-      ctx.font = '16px sans-serif';
-      predictions.forEach(p => {
-        if (p.class === 'person') {
-          const [x,y,w,h] = p.bbox;
-          ctx.strokeStyle = 'red';
-          ctx.strokeRect(x,y,w,h);
-          const label = `${p.class} ${(p.score*100).toFixed(0)}%`;
-          ctx.fillStyle = 'red';
-          ctx.fillText(label, x + 4, y > 16 ? y - 4 : y + 16);
-        }
-      });
-    }
+async function detectLoop(){
+  if(!model||video.paused||video.ended) return;
+  const now=performance.now();
+  const threshold=parseFloat(thresholdSlider.value);
+  try{
+    const predictions=await model.detect(video);
+    drawBoxes(predictions);
+    const personScores=predictions.filter(p=>p.class==='person').map(p=>p.score);
+    const maxScore=personScores.length?Math.max(...personScores):0;
 
-    async function detectLoop() {
-      if (!model || video.paused || video.ended) return;
-      const now = performance.now();
-      const threshold = parseFloat(thresholdSlider.value);
-      try {
-        const predictions = await model.detect(video);
-        drawBoxes(predictions);
-        const personDetected = predictions.some(p => p.class === 'person' && p.score >= threshold);
-        if (personDetected && !lastPersonState) {
-          const elapsed = now - lastBeepAt;
-          if (soundToggle.checked && elapsed > BEEP_COOLDOWN) {
-            beep.currentTime = 0;
-            await beep.play().catch(()=>{/* 再生拒否を無視 */});
-            lastBeepAt = now;
-          }
-        }
-        lastPersonState = personDetected;
-        statusEl.textContent = 'ステータス: ' + (personDetected ? '人を検出' : '未検出');
-      } catch (e) {
-        console.error('検出エラー', e);
-      } finally {
-        if (detecting) setTimeout(detectLoop, detectInterval);
+    // 簡易スムージング
+    history.push(maxScore);
+    if(history.length>SMOOTH_WINDOW) history.splice(SMOOTH_WINDOW);
+    const avgScore=history.reduce((a,b)=>a+b,0)/history.length;
+
+    const personDetected=avgScore>=threshold;
+
+    if(personDetected && !lastPersonState){
+      const elapsed=now-lastBeepAt;
+      if(soundToggle.checked && elapsed>BEEP_COOLDOWN){
+        beep.currentTime=0;
+        await beep.play().catch(()=>{});
+        lastBeepAt=now;
       }
+      const t=new Date().toLocaleTimeString();
+      addHistoryEntry(`${t} 検出 (score=${maxScore.toFixed(2)})`);
     }
+    lastPersonState=personDetected;
+    statusEl.textContent='ステータス: '+(personDetected?'人を検出':'未検出');
+  }catch(e){
+    console.error('検出エラー',e);
+  }finally{
+    if(detecting) setTimeout(detectLoop,detectInterval);
+  }
+}
 
-    startBtn.addEventListener('click', async () => {
-      startBtn.disabled = true;
-      await startCamera();
-      if (!model) await loadModel();
-      if (!detecting) {
-        detecting = true;
-        detectLoop();
-      }
-      startBtn.disabled = false;
-    });
+startBtn.addEventListener('click',async()=>{
+  startBtn.disabled=true;
+  await listCameras();
+  await startCamera(cameraSelect.value);
+  if(!model) await loadModel();
+  if(!detecting){ detecting=true; detectLoop(); }
+  startBtn.disabled=false;
+});
 
-    // ウィンドウリサイズでキャンバスを合わせる
-    window.addEventListener('resize', () => {
-      if (video.videoWidth) {
-        overlay.width = video.videoWidth;
-        overlay.height = video.videoHeight;
-      }
-    });
+switchBtn.addEventListener('click',async()=>{
+  if(cameraSelect.value!==currentDeviceId){
+    await startCamera(cameraSelect.value);
+  }
+});
 
-    // スライダーや設定で即時反映されるので UI はここでは不要（自分で調整してください）
-  </script>
+clearHistoryBtn.addEventListener('click',()=>{
+  historyList.innerHTML='';
+  history.length=0;
+});
+
+window.addEventListener('resize',()=>{
+  if(video.videoWidth){
+    overlay.width=video.videoWidth;
+    overlay.height=video.videoHeight;
+  }
+});
+</script>
 </body>
 </html>
