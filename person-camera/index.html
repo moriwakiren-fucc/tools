@@ -3,12 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>人物検出アラート</title>
+  <title>人物検出アラート（カメラ切替付き）</title>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
 </head>
 <body>
   <h1>人物検出アラート（MoveNet Thunder版）</h1>
+
+  <!-- カメラ切替ボタン -->
+  <button id="switchBtn">カメラ切替</button>
+
   <video id="video" autoplay playsinline style="width:640px; height:auto; border:1px solid #ccc;"></video>
   <canvas id="canvas" width="640" height="480" style="border:1px solid #333;"></canvas>
   <audio id="alertSound" src="alert.mp3" preload="auto"></audio>
@@ -16,32 +20,46 @@
 
   <script>
     let detector, video, ctx;
-    const alertSound = document.getElementById('alertSound');
+    let currentFacingMode = "environment"; // ✅ デフォルトを背面カメラ
+    let stream;
 
+    const alertSound = document.getElementById('alertSound');
+    const switchBtn = document.getElementById('switchBtn');
+
+    // カメラ初期化
     async function initCamera() {
-      video = document.getElementById('video');
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480 }
+      // 既存のカメラストリームを停止
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: 640,
+          height: 480,
+          facingMode: currentFacingMode  // ✅ カメラ方向を指定
+        }
       });
+
       video.srcObject = stream;
       await new Promise(resolve => video.onloadedmetadata = resolve);
     }
 
+    // モデル初期化
     async function initModel() {
-      // ✅ MoveNet Thunder に切り替え
       detector = await poseDetection.createDetector(
         poseDetection.SupportedModels.MoveNet,
-        { modelType: poseDetection.movenet.modelType.THUNDER } // ←ここが重要
+        { modelType: poseDetection.movenet.modelType.THUNDER } // 高精度モデル
       );
       document.getElementById('status').innerText = "モデル準備完了";
     }
 
+    // 検出ループ
     async function detect() {
       const poses = await detector.estimatePoses(video);
       ctx.drawImage(video, 0, 0, 640, 480);
 
       if (poses.length > 0) {
-        // 関節点を描画
         poses[0].keypoints.forEach(kp => {
           if (kp.score > 0.3) {
             ctx.beginPath();
@@ -51,16 +69,24 @@
           }
         });
 
-        // 人物が検出されたら音を鳴らす
-        alertSound.play();
+        alertSound.play(); // 人物が検出されたら音を鳴らす
       }
 
       requestAnimationFrame(detect);
     }
 
+    // カメラ切替ボタンの動作
+    switchBtn.addEventListener('click', async () => {
+      currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
+      await initCamera(); // 切替後に再初期化
+    });
+
+    // メイン処理
     async function main() {
-      await initCamera();
+      video = document.getElementById('video');
       ctx = document.getElementById('canvas').getContext('2d');
+
+      await initCamera();  // ✅ 初回は背面カメラを使用
       await initModel();
       detect();
     }
