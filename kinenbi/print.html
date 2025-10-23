@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+
+<html id="web">
+<?php echo mb_substr("UTF-8");?>
+
+<head>
+  <meta http-equiv="content-type" charset="UTF-8">
+  <title>日本や世界の色々な記念日</title>
+  <link rel="stylesheet" href="printpp.css">
+  <link rel="stylesheet" type="text/css" media="print" href="print.css">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Satisfy&family=Stoke&family=Yellowtail&family=Geo&family=Oswald&family=Lobster&family=Cookie&family=Chewy&family=Limelight&family=Sacramento&family=Plaster&display=swap" rel="stylesheet">
+  <link rel="icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" sizes="180x180">
+  <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+</head>
+<section class="search" id="search">
+  <h2 class="title">記念日検索サービス　印刷ページ</h2>
+  <!-- 検索ボックス -->
+<div class="searchBox">
+  <h4>Let's&nbsp;&nbsp;Seach&nbsp;&nbsp;<img src="img/kinenbi_h4.png" height="60px">&nbsp;!</h4>
+    <div class="noneprint">
+    <h5>検索方法</h5>
+    <p>日付は??月??日の場合、??/??のような形で、<b>半角</b>で入力してください&#x3002 <br>また、月や日の日付の数字が一桁の場合、0をつけてください。<br>例：3月26日→03/26<br>お手数ですが、もう一度、入力して下さい。</p>
+    <h5>日付入力欄</h5>
+   <input type="text" placeholder="日付を入力して下さい！" class="inputText" id="inputText"><button type="button" class="inputButton" onclick="clickButton()"> <img src="img/seach.png" height ="30px"></button>
+    </div>
+  <!-- 出力欄 -->
+  <div class="outputBox">
+    <h5>検索結果</h5>
+    <!-- 表 -->
+    <table>
+      <tr>
+        <th>入力した日付</th>
+        <td class="outputText1"></td>
+      </tr>
+      <tr>
+        <th>記念日の名前</th>
+        <td class="outputText2"></td>
+      </tr>
+      <tr>
+        <th>詳細</th>
+        <td class="outputText3"></td>
+      </tr>
+      <tr>
+        <th>気になる方はこちら<br>(Google検索のURL)</th>
+        <td class="outputText5" id="outputText5"><a id="link" href=# target="_blank"><span id="outputText6"></span></a></td>
+      </tr>
+    
+      <tr>
+        <td colspan="2" rowspan="1" class="outputText4" id="outputText4">上の検索ボックスに、検索方法にしたがって日付を入力して下さい。</td>
+      </tr>
+    </table>
+    <p style="font-weight:600;" class="insatsu"><a href="javascript:void(0)" onclick="window.print();return false;" class="pri" style="text-decoration:none; font-size:25px;">このページを印刷する<span style="font-size:15px;">（「背景のグラフィック」にチェックを入れたほうが見やすいです）</span></a><br><a href="index.html" class="pri" style="text-decoration:none; font-size:25px;">通常ページに戻る</a></p>
+    
+  </div><!-- /.outputBox -->
+
+</div><!-- /.searchBox -->
+
+<!-- JavaScriptと連携する -->
+<script src="print.js"></script>
+
+</section>
+
+</html>

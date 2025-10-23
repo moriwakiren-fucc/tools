@@ -1,0 +1,684 @@
+/* ===== Webサイト全体のスタイル ===== */
+@import url('https://fonts.googleapis.com/css2?family=Sawarabi+Mincho&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Klee+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Kiwi+Maru&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Mochiy+Pop+P+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Zen+Kurenaido&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Yomogi&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Didact+Gothic&display=swap');
+
+/* html */
+html {
+  height: 100%;
+  scroll-behavior: smooth;
+}
+
+html[data-mode="light"] {
+  filter: grayscale(100%);
+	filter: invert(0);
+}
+
+html[data-mode="dark"] {
+	filter: invert(100%);
+}
+
+html[data-mode="gray"] {
+	filter: grayscale(100%);
+}
+
+
+.xbutton1 p{
+  font-size:32px;
+  color:#000000;
+  margin:0;
+  display:inline-block;
+}
+
+.xbutton1{
+  border-bottom:5px solid #000000;
+}
+
+.xbutton{
+  display:inline-block;
+}
+
+.xxbutton{
+  display:inline-block;
+}
+
+.lightbutton{
+  filter:0;
+  background-color:#ff903b;
+  color:#006fc4;
+  font-size:20px;
+  padding:0;
+  height:36px;
+  margin:5px;
+  border:3px solid #006fc4;
+  border-radius:18px;
+  filter:none;
+  display:inline-block;
+}
+
+.darkbutton{
+  filter:0;
+  background-color:#006fc4;
+  color:#ff903b;
+  font-size:20px;
+  padding:0;
+  height:36px;
+  margin:5px;
+  border:3px solid #ff903b;
+  border-radius:18px;
+  display:inline-block;
+}
+
+.graybutton{
+  filter: grayscale(100%);
+  background-color:#bfbfbf;
+  color:#5c5c5c;
+  font-size:20px;
+  padding:0;
+  height:36px;
+  margin:5px;
+  border:3px solid #5c5c5c;
+  border-radius:18px;
+  filter:none;
+  display:inline-block;
+}
+
+.pagetop {
+  cursor: pointer;
+  position: fixed;
+  right: 30px;
+  bottom: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  transition: .3s;
+  color: #00A6C4;
+  background: #fff;
+  /*   デフォルトは非表示 */
+  opacity: 0;
+  z-index: 100000;
+}
+
+.pagetop:hover {
+  filter: drop-shadow(0 0 7.5px #ff00ff);
+}
+
+/* body */
+body {
+  font-family: sans-serif;
+  height: 100%;
+  margin: 0;
+  background-color:#ffffff;
+}
+
+/* h1見出し */
+h1 {
+  color: #00ff00;
+  /* フォントの色 */
+  font-size: 100px;
+  /* フォントの大きさ */
+  font-family: 'Noto Serif JP', serif;
+  text-align: center;
+  /* 文字・画像を中央にそろえる */
+  height: 50vh;
+  /* 高さ */
+  padding-top: 0px;
+  /* 上がわの余白 */
+  width: 100%;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom:0;
+  left:0;
+  margin: auto;
+  background-color: #00571780;
+}
+
+
+/* ヘッダーの箱 */
+header {
+  margin-top: 0px;
+  width: 100%;
+  padding-top: 0px;
+  /* 上がわの余白 */
+  background-image: url(img/header_bg.png);
+  background-size: cover;
+  display: inline-block;
+  position: relative;
+  height: 100vh;
+}
+
+
+details[open] .open {
+  display: none;
+}
+
+details:not([open]) .close {
+  display: none;
+}
+
+/* ナビゲーションの箱 */
+nav {
+  background-color: #b8ffee;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  padding-left: 0px;
+  padding-right: 0px;
+  z-index: 100000;
+  position: relative;
+  margin-top: 20px;
+  margin-bottom:25px;
+  margin-left:25%;
+  margin-right:25%;
+  border: 3px solid #0000ff;
+  text-align:center;
+  width:auto;
+}
+
+/* リスト全体 */
+nav ul {
+  margin: 0px;
+  text-align: center;
+  list-style-type: none;
+}
+
+/* １つ１つのリスト */
+nav li {
+  text-align:center;
+  margin:0;
+}
+
+/* リンク */
+nav a {
+  color: #4c350a;
+  text-decoration: none;
+  text-align:center;
+}
+
+nav summary {
+  color: #0000ff;
+  display: block;
+  list-style: none;
+  text-align:center;
+}
+
+/* リンクにふれた時 */
+nav a:hover {
+  font-weight: bold;
+  font-size: 20px;
+}
+
+/* h2見出し */
+.title {
+  font-size: 45px;
+  padding-right: 15px;
+  margin-bottom: 30px;
+  padding-left:10px;
+  color: #ffff00;
+  font-family: 'Noto Sans JP', sans-serif;
+  text-align: left;
+}
+
+/* ===== お店紹介のスタイル ===== */
+/* セクション */
+.shop {
+  background-color: #c4f6ff;
+  color: #000000;
+  padding: 30px;
+  height: auto;
+}
+
+.shop h2 {
+  color: #543500;
+  border-left:solid 10px  #ffff00;
+  background-color:#ffffd4;
+  width: fit-content;
+  border-bottom: solid 3px #696969;
+}
+
+
+/* 段落 */
+.shop p {
+  font-size: 20px;
+  background-color: #ffffff;
+  /* 背景の色 */
+  padding: 15px;
+  border-radius: 30px;
+  height: 100%;
+}
+
+
+.kome {
+  margin-left: 1rem;
+  text-indent: -1rem;
+  font-size: 15px;
+}
+
+/* 画像 */
+.shop img {
+  float: right;
+  /* 画像や箱の回り込み */
+  filter: drop-shadow(10px 10px 10px rgba(0, 0, 0, 0.6));
+  z-index: 50;
+  height: 175px;
+}
+
+.shop a,sup {
+  color: #0000cc;
+}
+
+.shop a[target="_blank"]::after {
+  content: url(img/new_tab2_1.jpeg);
+  display: inline-block;
+  background-size: contain;
+  vertical-align: middle;
+}
+
+.shop a:hover {
+  color: #006400;
+}
+
+/* ===== 値段表のスタイル ===== */
+/* セクション */
+.price {
+  padding: 30px;
+  background-color: #c4f6ff;
+}
+
+.price h2 {
+  color: #543500;
+  border-left:solid 10px  #ffff00;
+  background-color:#ffffd4;
+  width: fit-content;
+  border-bottom: solid 3px #696969;
+}
+
+/* 表 */
+.price table {
+  background-color: #ffffff;
+  border-collapse: collapse;
+  /* 表の隙間（すきま） */
+  width: 100%;
+}
+
+/* 表のセル */
+.price td {
+  border: 1px solid #000000;
+  padding: 10px;
+  overflow-wrap: break-word;
+}
+
+/* 表の見出しセル */
+.price th {
+  border: 1px solid #000000;
+  padding: 10px;
+  background-color: #63d297;
+  text-align: center;
+}
+
+.price a {
+  color: #0000cc;
+}
+
+.price a[target="_blank"]::after {
+  content: url(img/new_tab2.jpeg);
+  display: inline-block;
+  background-size: contain;
+  vertical-align: middle;
+}
+
+.price a:hover {
+  color: #006400;
+}
+
+/* ===== パン紹介のスタイル ===== */
+/* セクション */
+.photo {
+  padding: 30px;
+  background-image: url(img/cork.jpg);
+  background-repeat: no-repeat;
+  background-size: cover;
+  position: relative;
+}
+
+
+/* h2見出し */
+.photo h2 {
+  color: #2c6120;
+  border-left:solid 10px  #000096;
+  background-color:#cfcfff;
+  width: fit-content;
+  border-bottom: solid 3px #696969;
+  clear: left;
+}
+
+.photophoto{
+  width:97%;
+  margin:auto;
+}
+
+/* h3見出し */
+.photo h3 {
+  color: #663300;
+  font-weight: 900;
+  background-color:#cfffa6;
+}
+
+/* 段落 */
+.photo p {
+  color: #000000;
+  font-size:20px;
+  width:51em;
+  clear: left;
+  background-color:#ffffff67;
+  /* 画像や箱の回り込みをやめる */
+}
+
+.small{
+  background-color: #ffffff;
+  height: 240px;
+  padding: 15px;
+  margin:20px;
+  box-shadow: 3px 3px 5px 5px #000000ab;
+  float: left;
+  border-style: ridge;
+  border-width: 10px;
+  border-color:#a52a2a;
+  text-align:center;
+  width:325px;
+  font-family: 'Kiwi Maru', serif;
+}
+
+.small1{
+height:85%;
+}
+
+.small2{
+  margin-bottom:auto;
+}
+
+.small a{
+  text-decoration:none;
+}
+
+.small:hover{
+  transform: scale(1.1, 1.1)
+}
+
+
+.photo table {
+  border-collapse: collapse;
+  margin:15px;
+}
+
+
+.photo tr {
+  margin-top: 10px;
+  background-color: #e8fce6;
+}
+
+/* 表のセル */
+.photo td {
+  border: 1px solid #000000;
+  padding: 10px;
+  overflow-wrap: break-word;
+}
+
+
+.photo tr:hover{
+  background-color:#d9f4ff;
+}
+
+
+/*＝＝＝＝＝ 全体の設定 ＝＝＝＝＝＝ */
+
+.search {
+  margin: 0;
+  background-image: url(img/background2.jpg);
+  background-size: cover;
+  padding: 30px;
+  min-height: 100vh;
+}
+
+.search h2{
+  color: #631375;
+  border-left:solid 10px  #177d00;
+  background-color:#c9fabe;
+  width: fit-content;
+  border-bottom: solid 3px #696969;
+}
+
+/*＝＝＝＝＝ 検索機能全体 ＝＝＝＝＝＝ */
+.searchBox h4 {
+  color: #000000;
+  font-weight:300;
+  font-size: 60px;
+  font-family: 'Mochiy Pop P One', sans-serif;
+  margin: auto;
+  padding:0;
+  height:70px;
+  display:flex;
+  align-items: center;
+}
+
+.searchBox p{
+  margin-top:0px;
+}
+
+.searchBox h5 {
+  font-size: 20px;
+  margin-bottom:10px;
+}
+
+.searchBox {
+  background: #fff;
+  width: 900px;
+  padding: 30px;
+  border: 10px solid #0000ff;
+  margin-top: 20px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* 入力欄 */
+.inputBox {
+  margin-bottom: 30px;
+}
+
+.inputText {
+  height: 39px;
+  width: 240px;
+  background: #f4fff0;
+  vertical-align: middle;
+  border-left:2px solid #000000;
+  border-top:2px solid #000000;
+  border-bottom:2px solid #000000;
+  border-right:1px solid #000000;
+  margin-right:0px;
+  border-top-left-radius: 38px;
+  border-bottom-left-radius:38px;
+  text-indent: 19px;
+  font-size:20px;
+}
+
+::placeholder {
+  color: #666666;
+  font-size:20px;
+  vertical-align: middle;
+  text-indent: 19px;
+}
+
+.inputButton {
+  background: #c6ebb9;
+  color: #ffffff;
+  padding: 5px 20px;
+  vertical-align: middle;
+  border-right:2px solid #000000;
+  border-top:2px solid #000000;
+  border-bottom:2px solid #000000;
+  border-left:1px solid #000000;
+  border-top-right-radius: 38px;
+  border-bottom-right-radius:38px;
+  width:53px;
+  height:45px;
+  margin-left:0px;
+  text-align:center;
+  text-indent: -9.5px;
+}
+
+input[type="button"],input[type="submit"],button{
+    cursor: pointer;
+}
+
+/* 出力欄 */
+.outputBox table {
+  background-color: #ffdcd9;
+  border-collapse: collapse;
+  width: 100%;
+  color: #000000;
+  display:　flex;
+  flex-wrap: wrap;
+  font-size:15px;
+}
+
+.outputBox td {
+  border: 1px solid #000000;
+  padding: 10px;
+}
+.outputText4 {
+  background-color:#ffe0ab;
+}
+
+.outputText5 a{
+  text-decoration:none;
+}
+
+.asd{
+  display:inline-block;
+  color: #0000cc;
+}
+
+.asd:hover{
+  color:#006400;
+}
+
+.outputBox th {
+  width: 200px;
+  border: 1px solid #000000;
+  font-weight:700;
+  padding: 10px;
+  background-color: #ff9187;
+  text-align: left;
+}
+
+#outputText6{
+  color:#0000cc;
+  font-weight:600;
+}
+
+#outputText6:hover{
+  color:#006400;
+}
+
+.foot{
+  text-align: center;
+  height:121px;
+  padding-top:10px;
+  background-color:#00cccc;
+}
+
+.map {
+  display: inline-block;
+  text-align: center;
+  padding-top:0px;
+  padding-bottom:0px;
+  margin-bottom:10px;
+  height:76px;
+}
+
+
+.map1 {
+  width:calc(100% - 6px);
+  background-color:#deffe3;
+  display: inline-block;
+  text-align: center;
+  border: solid #008516;
+  border-width:3px 3px 0px 3px;
+  margin:0;
+  font-size:20px;
+  height:28px;
+}
+
+.map2 {
+  width:calc(100% - 6px);
+  display: inline-block;
+  text-align: center;
+  border: 3px solid #008516;
+  background-color:#deffe3;
+  text-decoration: none;
+  margin:0;
+  font-size:17px;
+  height:28px;
+}
+
+.map2 a{
+  color:#420182;
+  text-decoration: none;
+  background-image: linear-gradient(to right, transparent 50%, #FFDD9E 50%);
+  background-position: 0 0;
+  background-size: 200% auto;
+  transition:0.3s;
+}
+
+
+.map2 a:hover {
+  background-position: -100% 0;
+}
+
+.fuchu{
+  padding:5px;
+  background-color: #00cccc;
+  margin:0;
+  text-align:center;
+  font-family: 'Great Vibes', cursive;
+  font-weight:550;
+  font-size:20px;
+  height:25px;
+}
+
+
+.message {
+  padding:15px;
+  background-color:#F9BFF1;
+}
+
+.message p {
+  background-color: #ffffff;
+  margin-left:20px;
+  margin-right:20px;
+  padding:20px;
+  font-size: 20px;
+  border-radius:15px; 
+  font-family: 'Zen Kurenaido', sans-serif;
+}
+
+.message h2 {
+  color: #d6a53c;
+  border-left:solid 10px #1a005c;
+  background-color:#dbe4ff;
+  width: fit-content;
+  border-bottom: solid 3px #696969;
+}
+

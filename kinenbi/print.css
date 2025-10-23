@@ -1,0 +1,22 @@
+@media print {
+  
+  /* 印刷専用のCSSを記述 */
+  .search {
+    background:none;
+    margin:0;
+    padding:0;
+  }
+  h2 {
+    margin:0;
+  }
+  .noneprint{
+    display:none;
+  }
+  .outputText4{
+    display:none;
+  }
+  
+  .pri{
+    display:none;
+  }
+}

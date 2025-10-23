@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+
+<html id="web">
+<?php echo mb_substr("UTF-8");?>
+
+<head>
+  <meta http-equiv="content-type" charset="UTF-8">
+  <title>日本や世界の色々な記念日</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Satisfy&family=Stoke&family=Yellowtail&family=Geo&family=Oswald&family=Lobster&family=Cookie&family=Chewy&family=Limelight&family=Sacramento&family=Plaster&display=swap" rel="stylesheet">
+  <link rel="icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" sizes="180x180">
+  <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+</head>
+<section class="noneprint">
+<div class="xbutton1">
+  <p>アクセシビリティ表示モード</p>
+  <div class="xbutton">
+  <button data-mode="light" class="lightbutton" id="button">　通常モード　</button>
+  <button data-mode="dark" class="darkbutton" id="button">　色反転モード　</button>
+  </div>
+  <div class="xxbutton">
+  <button data-mode="gray" class="graybutton" id="button">　モノクロモード　</button>
+  </div>
+</div>
+
+<a href="#page_top" class="page_top_btn"></a>
+
+<div class="pagetop"><img src="img/to_top.png"></div>
+   <header>
+     <h1>日本や世界の色々な<img src="img/kinenbi_h1.png"><br>   <img src="img/h1_bg.gif" width="70%"></h1>
+  </header>
+
+<nav>
+  <details>
+　<summary  style="text-align:center;">
+　  <span class="open">目次　【表示】</span>
+    <span class="close">目次　【非表示】</span>
+  </summary>
+    <ul>
+      <li> <a href="#shop">祝日について</a> </li>
+      <li> <a href="#price">日本の祝日とアメリカの祝日</a> </li>
+      <li> <a href="#photo">日本の色々な記念日</a> </li>
+      <li> <a href="#all">「日本の色々な記念日」の細かい説明</a> </li>
+      <li> <a href="#search">記念日検索サービス</a> </li>
+      <li> <a href="#message">Webページ制作者のメッセージ</a> </li>
+    </ul>
+  </details>
+</nav>
+
+<section class="shop" id="shop">
+  <h2 class="title">祝日について</h2>
+  <p>
+    <img src="img/calendar.png">
+    　記念日といえば、祝日です。<br>　しかし、みなさんは祝日が何かを説明できますか。祝日については<a href="https://elaws.e-gov.go.jp/document?lawid=323AC1000000178" target="_blank">国民の祝日に関する法律</a><sup>※</sup>に定められており、それには「自由と平和を求めてやまない日本国民は、美しい風習を育てつつ、よりよき社会、より豊かな生活を築きあげるために、ここに国民こぞつて祝い、感謝し、又は記念する日を定め、これを『国民の祝日』と名づける。」と書かれてあります。この法律で、祝日は「休日とする」とされています。<br> <span class="kome">※「国民の祝日に関する法律」の文字をクリックすると、「E-Gov法令検索」の「国民の祝日に関する法律」のページを閲覧できます。</span> 
+  </p>
+</section>
+
+<section class="price" id="price">
+  <h2 class="title">日本の祝日とアメリカの祝日</h2>
+  <table>
+    <tr>
+      <th colspan="2" rowspan="1"　>日本</th>
+      <th colspan="2" rowspan="1">アメリカ</th>
+    </tr>
+    <tr>
+      <th width=44%>祝日の名前（国民の祝日に関する法律での位置づけ）</th>
+      <th width=12%>日付</th>
+      <th width=32%>祝日の名前（日本語）</th>
+      <th width=12%>日付</th>
+    </tr>
+    <tr>
+      <td style="background-color:#e7f9ef;">元日（年のはじめを祝う）</td>
+      <td style="background-color:#e7f9ef;">１月１日</td>
+      <td>New Year’s Day（ニューイヤーズ・デイ）</td>
+      <td>１月１日</td>
+    </tr>
+    <tr>
+      <td>成人の日（おとなになつたことを自覚し、みずから生き抜こうとする青年を祝いはげます）</td>
+      <td>１月の第２月曜日</td>
+      <td style="background-color:#e7f9ef;">Martin Luther King, Jr. Day	（キング牧師誕生日）</td>
+      <td style="background-color:#e7f9ef;">１月の第３月曜日</td>
+    </tr>
+    <tr>
+      <td style="background-color:#e7f9ef;">建国記念の日（建国をしのび、国を愛する心を養う）</td>
+      <td style="background-color:#e7f9ef;">２月11日</td>
+      <td>Washington’s Birthday	（ワシントン誕生日）</td>
+      <td>２月の第３火曜日</td>
+    </tr>
+    <tr>
+      <td>天皇誕生日（天皇の誕生日を祝う）</td>
+      <td>２月23日</td>
+      <td style="background-color:#e7f9ef;">Memorial Day	（戦没将兵追悼記念日）</td>
+      <td style="background-color:#e7f9ef;">５月最終月曜日</td>
+    </tr>
+    <tr>
+      <td style="background-color:#e7f9ef;">春分の日（自然をたたえ、生物をいつくしむ）</td>
+      <td style="background-color:#e7f9ef;">春分日</td>
+      <td>Independence Day aka Fourth of July	（独立記念日）</td>
+      <td>７月４日</td>
+    </tr>
+    <tr>
+      <td>昭和の日（激動の日々を経て、復興を遂げた昭和の時代を顧み、国の将来に思いをいたす）</td>
+      <td>４月29日</td>
+      <td style="background-color:#e7f9ef;">Labor Day	（レイバー・デイ）</td>
+      <td style="background-color:#e7f9ef;">９月の第１月曜日</td>
+    </tr>
+    <tr>
+      <td style="background-color:#e7f9ef;">憲法記念日（日本国憲法の施行を記念し、国の成長を期する）</td>
+      <td style="background-color:#e7f9ef;">５月３日</td>
+      <td>Columbus Day	（コロンバス・デイ）</td>
+      <td>10月の第２月曜日</td>
+    </tr>
+    <tr>
+      <td>みどりの日（自然に親しむとともにその恩恵に感謝し、豊かな心をはぐくむ）</td>
+      <td>５月４日</td>
+      <td style="background-color:#e7f9ef;">Veterans Day	（復員軍人の日）</td>
+      <td style="background-color:#e7f9ef;">11月11日</td>
+    </tr>
+    <tr>
+      <td style="background-color:#e7f9ef;">こどもの日（こどもの人格を重んじ、こどもの幸福をはかるとともに、母に感謝する）</td>
+      <td style="background-color:#e7f9ef;">５月５日</td>
+      <td>Thanksgiving	（感謝祭）</td>
+      <td>11月第４木曜日</td>
+    </tr>
+    <tr>
+      <td>海の日（海の恩恵に感謝するとともに、海洋国日本の繁栄を願う）</td>
+      <td>７月の第３月曜日</td>
+      <td style="background-color:#e7f9ef;">Christmas Day	（クリスマス）</td>
+      <td style="background-color:#e7f9eff;">12月25日</td>
+    </tr>
+    <tr>
+      <td style="background-color:#e7f9ef;">山の日（山に親しむ機会を得て、山の恩恵に感謝する）</td>
+      <td style="background-color:#e7f9ef;">８月11日</td>
+      <td colspan="2" rowspan="6" style="background-color:#ffffff;">このように、アメリカには10日しか祝日がないのに対し、日本には、16日もあります。また、日本とアメリカでは、祝日がどのような日なのかも違います。他の国の祝日を調べ、文化の違いについて考えてみては、いかがですか。<a href="https://www.google.com/search?q=%E4%B8%96%E7%95%8C%E3%81%AE%E7%A5%9D%E6%97%A5&rlz=1CAJEUV_enJP1001&ei=JEApY4O1MYu7mAXtnLiIAQ&oq=%E4%B8%96%E7%95%8C%E3%81%AE&gs_lcp=Cgdnd3Mtd2l6EAMYADIECAAQQzIRCAAQgAQQsQMQgwEQsQMQgwEyCggAELEDELEDEEMyBAgAEEMyBAgAEEMyCwgAEIAEELEDELEDMggIABCxAxCDATIICAAQsQMQgwEyEQgAEIAEELEDEIMBELEDEIMBMhEIABCABBCxAxCDARCxAxCDAToKCAAQRxDWBBCwAzoFCAAQgAQ6BAgAEB46BggAEB4QDzoECAAQAzoLCAAQgAQQsQMQgwE6CAgAEIAEELEDOggIABCPARDqAjoNCAAQgAQQsQMQgwEQBDoGCAAQBBADOgcIABCABBAEOgoIABCABBCxAxAEOgYIABAeEAQ6CAgAEB4QDxAESgQIQRgASgQIRhgAUNQEWIopYKUyaARwAXgAgAFkiAGmC5IBBDE0LjKYAQCgAQGwAQrIAQrAAQE&sclient=gws-wiz&safe=active&ssui=on" target="_blank"><br>「世界の祝日」をGoogleで検索する</a></td>
+    </tr>
+    <tr>
+      <td>敬老の日（多年にわたり社会につくしてきた老人を敬愛し、長寿を祝う）</td>
+      <td>９月の第３月曜日</td>
+    </tr>
+    <tr>
+      <td style="background-color:#e7f9ef;">秋分の日（祖先をうやまい、なくなつた人々をしのぶ）</td>
+      <td style="background-color:#e7f9ef;">秋分日</td>
+    </tr>
+
+    <tr>
+      <td>スポーツの日（スポーツを楽しみ、他者を尊重する精神を培うとともに、健康で活力ある社会の実現を願う）</td>
+      <td>10月の第２月曜日</td>
+    </tr>
+    <tr>
+      <td style="background-color:#e7f9ef;">文化の日（自由と平和を愛し、文化をすすめる）</td>
+      <td style="background-color:#e7f9ef;">11月３日</td>
+    </tr>
+    <tr>
+      <td>勤労感謝の日（勤労をたつとび、生産を祝い、国民たがいに感謝しあう）</td>
+      <td>11月23日</td>
+    </tr>
+  </table>
+</section>
+
+<section class="photo" id="photo">
+<h2 class="title">日本の色々な記念日</h2>
+<p>〜の日というのは祝日だけはありません。ここでは、日本の色々な記念日について紹介していきます。</p>
+<br>
+<div class="photophoto">
+  <a href="#Jan">
+  <div class="small">
+    <img src="img/houryuji.png" class="small1">
+    <h3>文化財防火デー</h3>
+  </div>
+  </a>
+  
+<a href="#Feb">
+  <div class="small">
+      <img src="img/shigeru.png" class="small1">
+      <h3>バカヤローの日</h3>
+  </div>
+</a>
+
+ <a href="#Mar">
+  <div class="small">
+      <img src="img/movie.jpg" class="small1">
+      <h3>カラー映画の日</h3>
+  </div>
+</a>
+  
+<a href="#Apr">
+  <div class="small">
+      <img src="img/clark.jpg" class="small1">
+      <h3>大志を抱く日</h3>
+  </div>
+</a>
+  
+<a href="#May">
+  <div class="small">
+      <img src="img/kiss.png" class="small1">
+      <h3>キスの日</h3>
+  </div>
+</a>
+  
+<a href="#Jun">
+  <div class="small">
+      <img src="img/police.png" class="small1">
+      <h3>おまわりさんの日</h3>
+  </div>
+</a>
+
+<a href="#Jul">
+  <div class="small">
+      <img src="img/credit.png" class="small1">
+      <h3>クレジットの日</h3>
+
+  </div>
+</a>
+
+<a href="#Aug">
+  <div class="small">
+      <img src="img/kenketsu.png" class="small1">
+      <h3>献血の日</h3>
+  </div>
+</a>
+
+<a href="#Sep">
+  <div class="small">
+      <img src="img/pizza.jpg" class="small1">
+      <h3>宅配ピ&#x30b6の日</h3>
+  </div>
+</a>
+
+<a href="#Oct">
+  <div class="small">
+      <img src="img/train.png" class="small1">
+      <h3>時刻表記念日</h3>
+  </div>
+</a>
+
+<a href="#Nov">
+  <div class="small">
+      <img src="img/pocky.png" class="small1">
+      <h3>ポッキー&amp;プリッツの日</h3>
+  </div>
+</a>
+
+<a href="#Dec">
+  <div class="small">
+      <img src="img/paper.png" class="small1">
+      <h3>紙の記念日</h3>
+  </div>
+</a>
+</div>
+<h2 class="title">「日本の色々な記念日」の細かい説明</h2>
+  <table id="all">
+    <tr style="background-color:transparent;">
+      <td style="border:none; background-color:transparent;"></td>
+    </tr>
+    <tr>
+      <td width=20% class="kinenbi" style="background-color:#61db53; text-align:center; font-weight:700;">記念日の名前</th>
+      <td width=10% class="kinenbi" style="background-color:#61db53; text-align:center; font-weight:700;">日付</th>
+      <td width=70% class="kinenbi" style="background-color:#61db53; text-align:center; font-weight:700;">理由・詳細</th>
+    </tr>
+    <tr id="Jan">
+      
+      <td style="text-align:center;">文化財防火デー </td>
+      <td style="text-align:center;">１月26日</td>
+      <td>1949年、奈良県斑鳩町の法隆寺金堂から出火し、国宝の十二面壁画の大半が焼損した日。この火災を教訓に1955年、文化財を災害から守ることを目的に、当時の文化財保護委員会（現：文化庁）と国家消防本部（現：消防庁）が制定した。</td>
+        
+    </tr>
+    <tr id="Feb">
+      <td style="text-align:center;">バカヤローの日</td>
+      <td style="text-align:center;">２月28日</td>
+      <td>1953年、吉田茂首相（当時）が衆議院予算委員会の席上、西村栄一議員の質問に対し興奮して「バカヤロー」と発言した日。この発言がもとで内閣不信任案が提出・可決され、この年の3月14日に衆議院が解散してしまった。</td>
+      
+    </tr>
+    <tr id="Mar">
+      <td style="text-align:center;">カラー映画の日</td>
+      <td style="text-align:center;">３月21日</td>
+      <td>1951年、国産初の総天然色（カラー）映画『カルメン故郷に帰る』が公開された日。</td>
+    </tr>
+    <tr id="Apr">
+      <td style="text-align:center;">ボーイズビーアンビシャスデー</td>
+      <td style="text-align:center;">４月16日</td>
+      <td>1876年、札幌農学校（現・北海道大学）の初代教頭を務め、「少年よ、大志を抱け！ （Boys, Be Ambitious!）」の言葉で知られるクラーク博士が、アメリカへ帰国した日。</td>
+    </tr>
+    <tr id="May">
+      <td style="text-align:center;">キスの日</td>
+      <td style="text-align:center;">５月23日</td>
+      <td>1946年、日本で初めてキスシーンが登場する映画とされる、『はたちの青春』が公開された日。</td>
+    </tr>
+    <tr id="Jun">
+      <td style="text-align:center;">おまわりさんの日</td>
+      <td style="text-align:center;">６月17日</td>
+      <td>1874年、日本ではじめて巡査制度が開始されたのに合わせて、警察官（おまわりさん）という職業が誕生した日。</td>
+    </tr>
+    <tr id="Jul">
+      <td style="text-align:center;">クレジットの日</td>
+      <td style="text-align:center;">７月１日</td>
+      <td>1961年、「<ruby> 割賦販売法<rt>かっぷはんばいほう</rt></ruby>」（後払いで商品を購入したり、サービスの提供を受けたりする「クレジット契約」に関して、ルールを定めた法律）が公布された日。</td>
+    </tr>
+    <tr id="Aug">
+      <td style="text-align:center;">献血の日</td>
+      <td style="text-align:center;">８月21日</td>
+      <td>1964年、日本政府が「輸血用血液を献血により確保する体制を確立」することを閣議決定した日。</td>
+    </tr>
+    <tr id="Sep">
+      <td style="text-align:center;">宅配ピザの日</td>
+      <td style="text-align:center;">９月30日</td>
+      <td>1985年東京・恵比寿に宅配ピザのチェーン店『ドミノ・ピザ』１号店が開店し、日本で初めて「宅配ピザ」というサービスが始まった日。</td>
+    </tr>
+    <tr id="Oct">
+      <td style="text-align:center;">時刻表記念日</td>
+      <td style="text-align:center;">10月５日</td>
+      <td>1894年、庚寅新誌社が日本初の本格的な時刻表『汽車汽船旅行案内』を出版した日。</td>
+    </tr>
+    <tr id="Nov">
+      <td style="text-align:center;">ポッキー&amp;プリッツの日</td>
+      <td style="text-align:center;">11月11日</td>
+      <td>大阪市に本社を置く食品メーカーの江崎グリコ株式会社が同社の製品『ポッキー』や『プリッツ』を4つ並べると「1111」に見えることから1999年に制定。</td>
+    </tr>
+    <tr id="Dec">
+      <td style="text-align:center;">紙の記念日</td>
+      <td style="text-align:center;">12月16日</td>
+      <td>実業家の渋沢栄一の提唱で設立された王子製紙の前身である抄紙会社という製紙会社が東京都の王子で開業した日。</td>
+    </tr>
+  </table>
+</section>
+</section>
+<section class="search" id="search">
+  <h2 class="title">記念日検索サービス</h2>
+  <!-- 検索ボックス -->
+<div class="searchBox">
+  <h4>Let's&nbsp;&nbsp;Seach&nbsp;&nbsp;<img src="img/kinenbi_h4.png" height="60px">&nbsp;!</h4>
+
+  <!-- 入力欄 -->
+  <div class="inputBox">
+    <div class="noneprint">
+    <h5>検索方法</h5>
+    <p>日付は??月??日の場合、??/??のような形で、<b>半角</b>で入力してください&#x3002 <br>また、月や日の日付の数字が一桁の場合、0をつけてください。<br>例：3月26日→03/26</p>
+    <h5>日付入力欄</h5>
+   <input type="text" placeholder="日付を入力して下さい！" class="inputText" id="inputText"><button type="button" class="inputButton" onclick="clickButton()"> <img src="img/seach.png" height ="30px"></button>
+    </div>
+  </div><!-- /.inputBox -->
+
+  <!-- 出力欄 -->
+  <div class="outputBox">
+    <h5>検索結果</h5>
+    <!-- 表 -->
+    <table>
+      <tr>
+        <th>入力した日付</th>
+        <td class="outputText1"></td>
+      </tr>
+      <tr>
+        <th>記念日の名前</th>
+        <td class="outputText2"></td>
+      </tr>
+      <tr>
+        <th>詳細</th>
+        <td class="outputText3"></td>
+      </tr>
+      <tr>
+        <th>気になる方はこちら<br>(Google検索のURL)</th>
+        <td class="outputText5" id="outputText5"><a id="link" href=# target="_blank"><span id="outputText6"></span></a></td>
+      </tr>
+    
+      <tr>
+        <td colspan="2" rowspan="1" class="outputText4" id="outputText4">上の検索ボックスに、検索方法にしたがって日付を入力して下さい。</td>
+      </tr>
+    </table>
+        <p style="text-align:right; font-weight:600; font-size:25px;"><a href="print.html" target="_blank" class="asd" style="text-decoration:none;">印刷用<img src="img/new_tab2_1.jpeg" style="height:25px;"></a></p>
+
+  </div><!-- /.outputBox -->
+
+</div><!-- /.searchBox -->
+
+<!-- JavaScriptと連携する -->
+<script src="script.js"></script>
+
+</section>
+
+<section class="message" id="message">
+  <h2 class="title">Webページ制作者のメッセージ</h2>
+  <div class="message1"><p>　本Webページを閲覧いただきまして、ありがとうございました。 <br>　いかがでしたか。このWebページをつくった目的やこのWebページをつくるにあたって苦労した点をご紹介いたします。 <br>　まず、このWebページを作った目的についてです。私は、昔から、「〜〜記念日」というものに興味がありました。意外性の高いものが、多くて、面白かったからです。しかし、調べてみると、記念日というのは、「忘れてほしくない」、「もっとみんなに知ってほしい」という願いを込めて、誰かまたはどこかの団体が制定したものが多いことに気が付きました。そこで、より多くの人に知ってほしいと思い、このWebページを制作しました。 <br>　次に、このWebページをつくる上で、苦労した点です。やはり、１番苦労したのは、【記念日検索サービス】です。検索してみるとわかると思いますが、２月29日も含め、どの日付を入力しても、記念日とその詳細が出るようになっています。この検索システムは、ひとつひとつ入力しないと、検索しても出てこないため、366日分全て、手入力でこのシステムを作りました。ちなみに、学校の長期休暇を使いましたが、入力だけで、10時間もかかっています。 <br>　次に苦労したのは、「『見やすいWebページ』や『便利なWebページ』など、すごいと思ってもらうための工夫をたくさん入れること」です。どうしたら、『見やすいWebページ』や『便利なWebページ』になるかを一生懸命考え、色々なアイデアを入れました。たとえば、〈【目次】の表示・非表示機能〉、〈【TOPボタン】の設置〉、〈【記念日検索サービス】の日付入力欄の中の「日付を入力して下さい」の文字〉などです。つくるのも大変でしたが、考えるのもとても大変でした。 <br>　また、配色などのデザイン面でもとても苦労しました。見にくいと感じて、何度もデザインをやり直しました。試行錯誤しながら、自分の中でのベストを目指しました。 <br>　しかし、悪いことばかりでもありませんでした。これらを通して、粘り強く取り組んだり、「より良いもの」を追求しようとしたりする力が身についたし、デザインのセンスも上がりました。この制作で身についた力は、Webページ制作に限らず、これからに活きると思うので、ここで学んだことを大切にしていきたいです。</p></div>
+</section>
+<div class="foot"><div class="map"><div class="map1" style="padding: 5px;"><b>サイトマップ</b></div><br><div class="map2" style="padding: 5px;" ><a href="#shop"><b>祝日について</b></a>　<a href="#price"><b>日本の祝日とアメリカの祝日</b></a>　<a href="#photo"><b>日本の色々な記念日</b></a>　<a href="#all"><b>「日本の色々な記念日」の細かい説明</b></a>　<a href="#search"><b>記念日検索サービス</b></a>　<a href="#message"><b>Webページ制作者のメッセージ</b></a></div></div><div class="fuchu"><span style="font-family: 'Didact Gothic', sans-serif; font-weight:400;">&copy;</span>&nbsp;&nbsp;R.Moriwaki</div></div>
+</html>
