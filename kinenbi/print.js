@@ -1,6 +1,15 @@
-$(document).ready( function(){
-alert('すみませんが、もう一度、「日付入力欄」に日付を入力して、検索ボタンをクリックしてください。');
-});
+// 今日の日付を取得
+const today = new Date();
+
+// 月と日を2桁に整形する関数
+const pad = (num) => String(num).padStart(2, '0');
+
+// "MM/DD" 形式に変換
+const formatted = `${pad(today.getMonth() + 1)}/${pad(today.getDate())}`;
+
+// inputにセット
+document.getElementById('inputText').value = formatted;
+
 
 function clickButton() {
   // 変数に入力欄の文字を入れる
@@ -14,7 +23,7 @@ function clickButton() {
     success: function (sheet) {
       // 変数にシートのデータを入れる
       var memo = sheet.allData;
-      // パンの数だけ検索をくりかえす
+      // データの数だけ検索をくりかえす
       for (var i = 0; i < memo.length; i++) {
         // iの値によって、検索するパンの名前を変える
         if (breadName == memo[i][0]) {
