@@ -17,7 +17,7 @@ function clickButton() {
   // シートからデータを取得する
   $.ajax({
     // GASをデプロイして作ったURL
-    url: "https://script.google.com/macros/s/AKfycbybNYiWM2WpJtiFj3ihjBuyN11_nnM53_UNoQlYpzps0NTKF0kACXdyH6zeKxMHA4j_0Q/exec",
+    url: "https://script.google.com/macros/s/AKfycbwCsn-Eh5-m85WI2ImtrfJhnVrljHwBgPl3NarotENHthS-ZhAB5LH7CQvmfFrv8U4WhA/exec",
     type: "GET",
     dataType: "json",
     success: function (sheet) {
