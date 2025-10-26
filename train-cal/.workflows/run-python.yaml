@@ -34,4 +34,4 @@ jobs:
       # Pythonスクリプトを実行
       - name: Run Python script
         run: |
-          python timetable.py
+          python train-cal.py
