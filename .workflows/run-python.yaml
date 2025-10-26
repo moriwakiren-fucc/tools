@@ -1,0 +1,37 @@
+name: Run Python Script
+
+on:
+  # プルリクエストが作成されたとき、または更新されたときにトリガー
+  pull_request:
+    types: [opened, synchronize, reopened]
+  # メインブランチにPushされたときも発火
+  push:
+    branches:
+      - master
+
+jobs:
+  execute-python:
+    runs-on: ubuntu-latest
+
+    steps:
+      # リポジトリのソースコードをチェックアウト
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 必要なPythonのバージョンをセットアップ
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12' # バージョンを指定
+
+      # 必要に応じて依存関係をインストール
+      - name: Install dependencies
+        if: ${{ hashFiles('requirements.txt') != '' }}
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Pythonスクリプトを実行
+      - name: Run Python script
+        run: |
+          python timetable.py
