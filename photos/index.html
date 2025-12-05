@@ -1,119 +1,40 @@
-　<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>画像一覧と共有</title>
-
-<style>
-body { font-family: sans-serif; padding: 20px; }
-#file-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 20px;
-}
-.file-item {
-    border: 1px solid #bbb;
-    padding: 10px;
-    border-radius: 8px;
-}
-.file-item img {
-    width: 100%;
-    border-radius: 6px;
-}
-.controls { margin-bottom: 20px; }
-button { padding: 8px 14px; margin-right: 10px; }
-</style>
+<title>画像一括共有</title>
 </head>
 <body>
-
-<h2>画像一覧</h2>
-
-<div class="controls">
-    <button id="share-all">すべて共有（画像ファイル）</button>
-    <button id="share-selected">選択したものを共有</button>
-</div>
-
-<div id="file-list"></div>
 
 <script>
 // JSON 読み込み
 fetch("./files.json")
-    .then(r => r.json())
-    .then(list => renderImages(list));
+  .then(res => res.json())
+  .then(async list => {
+    try {
+      // JSON の画像名を File オブジェクト化
+      const files = await Promise.all(
+        list.map(async name => {
+          const blob = await fetch("media/" + name).then(r => r.blob());
+          return new File([blob], name, { type: blob.type });
+        })
+      );
 
-// --------------------------------------------------
-// 画像カード生成
-// --------------------------------------------------
-function renderImages(list) {
-    const container = document.getElementById("file-list");
-
-    list.forEach(name => {
-        const filePath = name;
-
-        const div = document.createElement("div");
-        div.className = "file-item";
-
-        div.innerHTML = `
-            <img src="${filePath}">
-            <p>${name}</p>
-            <label>
-                <input type="checkbox" class="select-box" data-name="${name}">
-                選択する
-            </label>
-        `;
-
-        container.appendChild(div);
-    });
-}
-
-// --------------------------------------------------
-// ファイル読み込み → File オブジェクト化
-// --------------------------------------------------
-async function loadImageFile(name) {
-    const path = "media/" + name;
-    const blob = await fetch(path).then(r => r.blob());
-    return new File([blob], name, { type: blob.type });
-}
-
-// --------------------------------------------------
-// 全共有
-// --------------------------------------------------
-document.getElementById("share-all").addEventListener("click", async () => {
-    const list = await fetch("./files.json").then(r => r.json());
-    const files = await Promise.all(list.map(loadImageFile));
-    shareFiles(files);
-});
-
-// --------------------------------------------------
-// 選択共有
-// --------------------------------------------------
-document.getElementById("share-selected").addEventListener("click", async () => {
-    const selected = [...document.querySelectorAll(".select-box:checked")].map(e => e.dataset.name);
-
-    if (selected.length === 0) {
-        alert("何も選択されていません");
-        return;
-    }
-
-    const files = await Promise.all(selected.map(loadImageFile));
-    shareFiles(files);
-});
-
-// --------------------------------------------------
-// Web Share API にファイルを渡して共有
-// --------------------------------------------------
-function shareFiles(files) {
-    if (!navigator.canShare || !navigator.canShare({ files })) {
+      // Web Share API で共有
+      if (navigator.canShare && navigator.canShare({ files })) {
+        await navigator.share({
+          title: "画像共有",
+          text: "画像をまとめて共有します",
+          files: files
+        });
+      } else {
         alert("このブラウザは画像ファイルの共有に対応していません");
-        return;
+      }
+    } catch (err) {
+      console.error("共有に失敗:", err);
+      alert("共有に失敗しました");
     }
-
-    navigator.share({
-        title: "画像共有",
-        text: "画像を共有します",
-        files: files
-    }).catch(err => console.log(err));
-}
+  });
 </script>
 
 </body>
