@@ -15,7 +15,7 @@ fetch("./files.json")
       // JSON の画像名を File オブジェクト化
       const files = await Promise.all(
         list.map(async name => {
-          const blob = await fetch("media/" + name).then(r => r.blob());
+          const blob = await fetch(name).then(r => r.blob());
           return new File([blob], name, { type: blob.type });
         })
       );
