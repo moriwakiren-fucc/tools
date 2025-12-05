@@ -3,242 +3,162 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ファイルを変数化して共有ボタン</title>
+<title>ディレクトリ内ファイル一覧 → 変数化＋共有</title>
+
 <style>
-  :root{font-family:system-ui,-apple-system,Segoe UI,Roboto,"ヒラギノ角ゴ ProN",Meiryo,Arial;}
-  body{padding:20px;max-width:900px;margin:auto;color:#111;}
-  h1{font-size:1.2rem;margin-bottom:8px;}
-  .uploader{display:flex;gap:8px;align-items:center;margin-bottom:16px;}
-  input[type=file]{padding:6px;}
+  :root{font-family:system-ui, sans-serif;}
+  body{padding:20px;max-width:900px;margin:auto;}
+  h1{font-size:1.2rem;margin-bottom:10px;}
   .files{display:flex;flex-direction:column;gap:12px;}
-  .filecard{border:1px solid #ddd;border-radius:8px;padding:10px;display:flex;gap:12px;align-items:center;}
-  .meta{flex:1;min-width:0;}
-  .filename{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .varname{font-family:monospace;background:#f6f6f6;padding:4px 6px;border-radius:4px;margin-top:6px;display:inline-block;}
-  .btns{display:flex;gap:8px;flex-wrap:wrap;}
-  button, .linkbtn{background:#1976d2;color:white;border:none;padding:8px 10px;border-radius:6px;cursor:pointer;}
-  button.secondary{background:#555;}
-  .linkbtn{display:inline-block;text-decoration:none}
-  small{color:#666;display:block;margin-top:6px;}
-  .snippet{background:#f3f7ff;padding:10px;border-radius:6px;font-family:monospace;font-size:0.9rem;white-space:pre-wrap;word-break:break-word;}
-  .actions {display:flex;gap:8px;margin-left:auto;}
-  @media (max-width:600px){ .filecard{flex-direction:column;align-items:stretch;} .actions{margin-left:0;} }
+  .filecard{border:1px solid #ddd;padding:12px;border-radius:8px;
+            display:flex;gap:12px;align-items:center;}
+  .meta{flex:1;}
+  .filename{font-weight:600;}
+  .varname{font-family:monospace;background:#f6f6f6;padding:4px 6px;
+           border-radius:4px;margin-top:6px;display:inline-block;}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;}
+  button, a.linkbtn{
+    padding:8px 10px;
+    background:#1976d2;
+    color:white;
+    border:none;
+    border-radius:6px;
+    text-decoration:none;
+    cursor:pointer;
+  }
+  .snippet{background:#eef4ff;padding:10px;border-radius:6px;
+           font-family:monospace;white-space:pre-wrap;}
 </style>
 </head>
 <body>
-  <h1>ファイルを「変数」にして共有ボタンを出すデモ</h1>
-  <div class="uploader">
-    <input id="fileInput" type="file" multiple />
-    <button id="clearBtn" class="secondary">クリア</button>
-  </div>
 
-  <div id="files" class="files"></div>
+<h1>ディレクトリ内のファイルを変数化して共有ボタン表示</h1>
 
-  <h2>生成されるJSスニペット（コピー可能）</h2>
-  <div id="globalSnippet" class="snippet">ファイルを選択してください。</div>
+<div id="files" class="files"></div>
+
+<h2>生成された Snippet</h2>
+<div id="snippet" class="snippet">読み込み中…</div>
 
 <script>
-/*
-  動作:
-  - 選択したファイルを filesMap に格納
-  - 各ファイルについて安全なJS変数名(safeName)を生成
-  - blob URL を生成して表示（共有/ダウンロードのため）
-  - Web Share API が使えれば共有、無ければダウンロードリンクを提示
-  - JSスニペットを生成してコピーできる
-*/
+const FILES_JSON_URL = "/assets/files/files.json";
+const DIR_PATH       = "/assets/files/";
 
-const fileInput = document.getElementById('fileInput');
-const filesContainer = document.getElementById('files');
-const globalSnippet = document.getElementById('globalSnippet');
-const clearBtn = document.getElementById('clearBtn');
+const filesMap = {};   // safeName → { name, url }
+const filesDiv = document.getElementById("files");
+const snippetDiv = document.getElementById("snippet");
 
-let filesMap = {}; // safeName -> { file, blobUrl, originalName }
-
-function toSafeVarName(name) {
-  // 拡張子を除いたベース名を取得
-  const base = name.replace(/\.[^/.]+$/, "");
-  // 英数字とアンダースコア以外をアンダースコアに置換
-  let s = base.replace(/[^\p{L}\p{N}_]+/gu, '_');
-  // 先頭が数字なら前に underscore を付ける
-  if (/^[0-9]/.test(s)) s = '_' + s;
-  // 空文字になったらファイル名ハッシュ的にする
-  if (!s) s = 'file';
-  // 長すぎる場合は切る
-  if (s.length > 40) s = s.slice(0, 40);
-  // 同名変数がある場合は連番をつける（呼び出す側でユニークに）
-  return s;
+// 安全な変数名へ変換
+function toSafeName(filename) {
+  let base = filename.replace(/\.[^.]+$/, "");
+  base = base.replace(/[^\p{L}\p{N}_]/gu, "_");
+  if (/^[0-9]/.test(base)) base = "_" + base;
+  if (!base) base = "file";
+  return base.substr(0, 40);
 }
 
-function makeUniqueSafeName(baseName) {
-  let name = baseName;
-  let i = 1;
-  while (filesMap.hasOwnProperty(name)) {
-    name = baseName + '_' + i;
-    i++;
-  }
+// ユニーク保証
+function makeUnique(name) {
+  let base = name, n = 1;
+  while (filesMap[name]) name = base + "_" + n++;
   return name;
 }
 
-function updateGlobalSnippet() {
-  const entries = Object.entries(filesMap);
-  if (entries.length === 0) {
-    globalSnippet.textContent = 'ファイルを選択してください。';
-    return;
-  }
+// ファイルカード生成
+function addCard(safe, meta) {
+  const card = document.createElement("div");
+  card.className = "filecard";
 
-  // 例: const foo = filesMap['orig.ext'];
-  const lines = [];
-  lines.push('// filesMap を使ってファイルを参照できます');
-  lines.push('const filesMap = {');
-  for (const [safeName, meta] of entries) {
-    lines.push(`  "${safeName}": filesMap["${safeName}"], // ${meta.originalName}`);
-  }
-  lines.push('};');
-  lines.push('');
-  lines.push('// もしくは個別の変数定義（例）');
-  for (const [safeName, meta] of entries) {
-    lines.push(`const ${safeName} = filesMap["${safeName}"]; // ${meta.originalName}`);
-  }
-  globalSnippet.textContent = lines.join('\n');
-}
-
-function createFileCard(safeName, meta) {
-  const card = document.createElement('div');
-  card.className = 'filecard';
-  const metaDiv = document.createElement('div');
-  metaDiv.className = 'meta';
-
-  const fname = document.createElement('div');
-  fname.className = 'filename';
-  fname.textContent = meta.originalName;
-  metaDiv.appendChild(fname);
-
-  const varDiv = document.createElement('div');
-  varDiv.className = 'varname';
-  varDiv.textContent = safeName;
-  metaDiv.appendChild(varDiv);
-
-  const info = document.createElement('small');
-  info.textContent = `サイズ: ${meta.file.size} bytes ・ type: ${meta.file.type || 'n/a'}`;
-  metaDiv.appendChild(info);
-
+  const metaDiv = document.createElement("div");
+  metaDiv.className = "meta";
+  metaDiv.innerHTML = `
+    <div class="filename">${meta.name}</div>
+    <div class="varname">${safe}</div>
+  `;
   card.appendChild(metaDiv);
 
-  const actions = document.createElement('div');
-  actions.className = 'actions';
+  const act = document.createElement("div");
+  act.className = "actions";
 
-  // 共有ボタン (Web Share API)
-  const shareBtn = document.createElement('button');
-  shareBtn.textContent = '共有';
-  shareBtn.addEventListener('click', async () => {
-    // ファイル共有に対応しているか確認
-    if (navigator.canShare && navigator.canShare({ files: [meta.file] })) {
-      try {
-        await navigator.share({ files: [meta.file], title: meta.originalName });
-      } catch (err) {
-        alert('共有に失敗しました: ' + err);
+  // ブラウザで開く
+  const open = document.createElement("a");
+  open.className = "linkbtn";
+  open.href = meta.url;
+  open.target = "_blank";
+  open.textContent = "開く";
+  act.appendChild(open);
+
+  // ダウンロード
+  const dl = document.createElement("a");
+  dl.className = "linkbtn";
+  dl.href = meta.url;
+  dl.download = meta.name;
+  dl.textContent = "DL";
+  act.appendChild(dl);
+
+  // 共有（中身は fetch して file にする必要あり）
+  const share = document.createElement("button");
+  share.textContent = "共有";
+  share.onclick = async () => {
+    try {
+      const resp = await fetch(meta.url);
+      const blob = await resp.blob();
+      const f = new File([blob], meta.name, { type: blob.type });
+
+      if (navigator.canShare && navigator.canShare({ files: [f] })) {
+        await navigator.share({ files: [f], title: meta.name });
+      } else {
+        alert("このブラウザはファイル共有（Web Share API）に非対応です");
       }
-    } else {
-      alert('このブラウザではファイル共有（Web Share API）が利用できません。ダウンロードまたはリンクコピーを使ってください。');
-    }
-  });
-  actions.appendChild(shareBtn);
-
-  // ブラウザで開く (blob URL)
-  const openLink = document.createElement('a');
-  openLink.className = 'linkbtn';
-  openLink.href = meta.blobUrl;
-  openLink.target = '_blank';
-  openLink.rel = 'noopener';
-  openLink.textContent = '開く';
-  openLink.setAttribute('title','新しいタブで開く（サポートされている形式の場合）');
-  actions.appendChild(openLink);
-
-  // ダウンロードボタン
-  const dlLink = document.createElement('a');
-  dlLink.className = 'linkbtn';
-  dlLink.href = meta.blobUrl;
-  dlLink.download = meta.originalName;
-  dlLink.textContent = 'ダウンロード';
-  actions.appendChild(dlLink);
-
-  // blob URL をコピー
-  const copyLinkBtn = document.createElement('button');
-  copyLinkBtn.textContent = 'リンクコピー';
-  copyLinkBtn.addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(meta.blobUrl);
-      copyLinkBtn.textContent = 'コピーした';
-      setTimeout(()=> copyLinkBtn.textContent = 'リンクコピー', 1200);
     } catch (e) {
-      alert('クリップボードにコピーできません: ' + e);
+      alert("共有に失敗：" + e);
     }
-  });
-  actions.appendChild(copyLinkBtn);
+  };
+  act.appendChild(share);
 
-  // JS スニペット1行コピー（該当ファイルを参照する変数）
-  const copySnippetBtn = document.createElement('button');
-  copySnippetBtn.textContent = 'JS変数スニペットをコピー';
-  copySnippetBtn.addEventListener('click', async () => {
-    const snippet = `// ${meta.originalName}\nconst ${safeName} = filesMap["${safeName}"];`;
-    try {
-      await navigator.clipboard.writeText(snippet);
-      copySnippetBtn.textContent = 'コピーした';
-      setTimeout(()=> copySnippetBtn.textContent = 'JS変数スニペットをコピー', 1200);
-    } catch (e) {
-      alert('クリップボードにコピーできません: ' + e);
-    }
-  });
-  actions.appendChild(copySnippetBtn);
-
-  card.appendChild(actions);
-
-  return card;
+  card.appendChild(act);
+  filesDiv.appendChild(card);
 }
 
-function clearAll() {
-  // revoke blob urls
-  for (const k in filesMap) {
-    try { URL.revokeObjectURL(filesMap[k].blobUrl); } catch(e){}
+// Snippet 全更新
+function updateSnippet() {
+  const lines = [];
+  lines.push("// filesMap = { safeName: { name, url } }");
+  lines.push("const filesMap = {");
+
+  for (const key of Object.keys(filesMap)) {
+    lines.push(`  "${key}": { name: "${filesMap[key].name}", url: "${filesMap[key].url}" },`);
   }
-  filesMap = {};
-  filesContainer.innerHTML = '';
-  updateGlobalSnippet();
-  fileInput.value = '';
+  lines.push("};\n");
+
+  lines.push("// 例えば：");
+  for (const key of Object.keys(filesMap)) {
+    lines.push(`const ${key} = filesMap["${key}"];`);
+  }
+
+  snippetDiv.textContent = lines.join("\n");
 }
 
-clearBtn.addEventListener('click', clearAll);
+// 読み込み
+async function loadFiles() {
+  try {
+    const res = await fetch(FILES_JSON_URL);
+    const list = await res.json();   // ["a.pdf","b.png",...]
 
-fileInput.addEventListener('change', (ev) => {
-  const list = Array.from(ev.target.files || []);
-  if (list.length === 0) return;
+    for (const fname of list) {
+      const safe = makeUnique(toSafeName(fname));
+      const url = DIR_PATH + fname;
 
-  // 既存のものは残す（もしクリアしたければクリアボタンを押す）
-  for (const f of list) {
-    // 変数名生成
-    const base = toSafeVarName(f.name);
-    const safe = makeUniqueSafeName(base);
+      filesMap[safe] = { name: fname, url };
+      addCard(safe, filesMap[safe]);
+    }
 
-    const blobUrl = URL.createObjectURL(f);
-
-    filesMap[safe] = { file: f, blobUrl, originalName: f.name };
-
-    const card = createFileCard(safe, filesMap[safe]);
-    filesContainer.appendChild(card);
+    updateSnippet();
+  } catch (e) {
+    snippetDiv.textContent = "読み込み失敗：" + e;
   }
+}
 
-  updateGlobalSnippet();
-});
-
-// 初期ヒント
-globalSnippet.textContent = `
-// 使い方メモ:
-// filesMap はページ上で生成されるオブジェクトです。
-// 例: filesMap["my_file"] -> File オブジェクト
-//
-// ページ内の「JS変数スニペットをコピー」を使うと
-// 'const my_file = filesMap["my_file"];' という1行を取得できます。
-`.trim();
+loadFiles();
 </script>
 </body>
 </html>
