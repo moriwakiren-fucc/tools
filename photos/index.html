@@ -1,164 +1,113 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ディレクトリ内ファイル一覧 → 変数化＋共有</title>
-
+<meta charset="UTF-8">
+<title>画像一覧と共有</title>
 <style>
-  :root{font-family:system-ui, sans-serif;}
-  body{padding:20px;max-width:900px;margin:auto;}
-  h1{font-size:1.2rem;margin-bottom:10px;}
-  .files{display:flex;flex-direction:column;gap:12px;}
-  .filecard{border:1px solid #ddd;padding:12px;border-radius:8px;
-            display:flex;gap:12px;align-items:center;}
-  .meta{flex:1;}
-  .filename{font-weight:600;}
-  .varname{font-family:monospace;background:#f6f6f6;padding:4px 6px;
-           border-radius:4px;margin-top:6px;display:inline-block;}
-  .actions{display:flex;gap:8px;flex-wrap:wrap;}
-  button, a.linkbtn{
-    padding:8px 10px;
-    background:#1976d2;
-    color:white;
-    border:none;
-    border-radius:6px;
-    text-decoration:none;
-    cursor:pointer;
-  }
-  .snippet{background:#eef4ff;padding:10px;border-radius:6px;
-           font-family:monospace;white-space:pre-wrap;}
+body {
+    font-family: sans-serif;
+    padding: 20px;
+}
+#file-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 20px;
+}
+.file-item {
+    border: 1px solid #bbb;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+}
+.file-item img {
+    width: 100%;
+    border-radius: 6px;
+}
+.controls {
+    margin-bottom: 20px;
+}
+button {
+    padding: 8px 14px;
+    margin-right: 10px;
+}
 </style>
 </head>
 <body>
 
-<h1>ディレクトリ内のファイルを変数化して共有ボタン表示</h1>
+<h2>画像一覧</h2>
 
-<div id="files" class="files"></div>
+<div class="controls">
+    <button id="share-all">すべて共有</button>
+    <button id="share-selected">選択したものを共有</button>
+</div>
 
-<h2>生成された Snippet</h2>
-<div id="snippet" class="snippet">読み込み中…</div>
+<div id="file-list"></div>
 
 <script>
-const FILES_JSON_URL = "./files.json";
-const DIR_PATH       = "./";
+// JSON 読み込み
+fetch("./files.json")
+    .then(res => res.json())
+    .then(list => renderImages(list));
 
-const filesMap = {};   // safeName → { name, url }
-const filesDiv = document.getElementById("files");
-const snippetDiv = document.getElementById("snippet");
+// 一覧生成
+function renderImages(list) {
+    const container = document.getElementById("file-list");
+    container.innerHTML = "";
 
-// 安全な変数名へ変換
-function toSafeName(filename) {
-  let base = filename.replace(/\.[^.]+$/, "");
-  base = base.replace(/[^\p{L}\p{N}_]/gu, "_");
-  if (/^[0-9]/.test(base)) base = "_" + base;
-  if (!base) base = "file";
-  return base.substr(0, 40);
+    list.forEach(name => {
+        const filePath = "media/" + name; // 任意：画像フォルダ名
+        const div = document.createElement("div");
+        div.className = "file-item";
+
+        div.innerHTML = `
+            <img src="${filePath}" alt="${name}">
+            <p>${name}</p>
+            <label>
+                <input type="checkbox" class="select-box" data-path="${filePath}">
+                選択する
+            </label>
+        `;
+
+        container.appendChild(div);
+    });
 }
 
-// ユニーク保証
-function makeUnique(name) {
-  let base = name, n = 1;
-  while (filesMap[name]) name = base + "_" + n++;
-  return name;
-}
+// 全共有
+document.getElementById("share-all").addEventListener("click", () => {
+    fetch("./files.json")
+        .then(res => res.json())
+        .then(list => {
+            const urls = list.map(name => location.origin + "/media/" + name);
+            shareUrls(urls);
+        });
+});
 
-// ファイルカード生成
-function addCard(safe, meta) {
-  const card = document.createElement("div");
-  card.className = "filecard";
+// 選択共有
+document.getElementById("share-selected").addEventListener("click", () => {
+    const selected = [...document.querySelectorAll(".select-box:checked")]
+        .map(ch => location.origin + "/" + ch.dataset.path);
 
-  const metaDiv = document.createElement("div");
-  metaDiv.className = "meta";
-  metaDiv.innerHTML = `
-    <div class="filename">${meta.name}</div>
-    <div class="varname">${safe}</div>
-  `;
-  card.appendChild(metaDiv);
-
-  const act = document.createElement("div");
-  act.className = "actions";
-
-  // ブラウザで開く
-  const open = document.createElement("a");
-  open.className = "linkbtn";
-  open.href = meta.url;
-  open.target = "_blank";
-  open.textContent = "開く";
-  act.appendChild(open);
-
-  // ダウンロード
-  const dl = document.createElement("a");
-  dl.className = "linkbtn";
-  dl.href = meta.url;
-  dl.download = meta.name;
-  dl.textContent = "DL";
-  act.appendChild(dl);
-
-  // 共有（中身は fetch して file にする必要あり）
-  const share = document.createElement("button");
-  share.textContent = "共有";
-  share.onclick = async () => {
-    try {
-      const resp = await fetch(meta.url);
-      const blob = await resp.blob();
-      const f = new File([blob], meta.name, { type: blob.type });
-
-      if (navigator.canShare && navigator.canShare({ files: [f] })) {
-        await navigator.share({ files: [f], title: meta.name });
-      } else {
-        alert("このブラウザはファイル共有（Web Share API）に非対応です");
-      }
-    } catch (e) {
-      alert("共有に失敗：" + e);
-    }
-  };
-  act.appendChild(share);
-
-  card.appendChild(act);
-  filesDiv.appendChild(card);
-}
-
-// Snippet 全更新
-function updateSnippet() {
-  const lines = [];
-  lines.push("// filesMap = { safeName: { name, url } }");
-  lines.push("const filesMap = {");
-
-  for (const key of Object.keys(filesMap)) {
-    lines.push(`  "${key}": { name: "${filesMap[key].name}", url: "${filesMap[key].url}" },`);
-  }
-  lines.push("};\n");
-
-  lines.push("// 例えば：");
-  for (const key of Object.keys(filesMap)) {
-    lines.push(`const ${key} = filesMap["${key}"];`);
-  }
-
-  snippetDiv.textContent = lines.join("\n");
-}
-
-// 読み込み
-async function loadFiles() {
-  try {
-    const res = await fetch(FILES_JSON_URL);
-    const list = await res.json();   // ["a.pdf","b.png",...]
-
-    for (const fname of list) {
-      const safe = makeUnique(toSafeName(fname));
-      const url = DIR_PATH + fname;
-
-      filesMap[safe] = { name: fname, url };
-      addCard(safe, filesMap[safe]);
+    if (selected.length === 0) {
+        alert("何も選択されていません");
+        return;
     }
 
-    updateSnippet();
-  } catch (e) {
-    snippetDiv.textContent = "読み込み失敗：" + e;
-  }
-}
+    shareUrls(selected);
+});
 
-loadFiles();
+// Web Share API
+function shareUrls(urls) {
+    if (navigator.share) {
+        navigator.share({
+            title: "画像共有",
+            text: "以下の画像をご確認ください。",
+            url: urls.join("\n")
+        });
+    } else {
+        alert("このブラウザは共有に対応していません:\n" + urls.join("\n"));
+    }
+}
 </script>
+
 </body>
 </html>
