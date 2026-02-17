@@ -1,3 +1,7 @@
+body {
+  touch-action: none;
+}
+
 #canvasWrapper {
   position: relative;
   display: inline-block;
@@ -5,7 +9,7 @@
 
 #baseImage {
   display: block;
-  max-width: 600px;
+  max-width: 100%;
 }
 
 #drawCanvas {
@@ -16,4 +20,9 @@
 
 .controls {
   margin-top: 10px;
+}
+
+label {
+  display: block;
+  margin-top: 5px;
 }
