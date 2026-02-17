@@ -3,8 +3,15 @@ const baseImage = document.getElementById("baseImage");
 const canvas = document.getElementById("drawCanvas");
 const ctx = canvas.getContext("2d");
 
+const penPreview = document.getElementById("penPreview").getContext("2d");
+const eraserPreview = document.getElementById("eraserPreview").getContext("2d");
+
 let drawing = false;
 let mode = "pen";
+
+let penWidth = 5;
+let eraserWidth = 20;
+
 let history = [];
 let historyIndex = -1;
 
@@ -18,45 +25,79 @@ baseImage.onload = () => {
   canvas.height = baseImage.height;
 };
 
-canvas.addEventListener("mousedown", e => {
+function getPos(e) {
+  if (e.touches) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: e.touches[0].clientX - rect.left,
+      y: e.touches[0].clientY - rect.top
+    };
+  }
+  return { x: e.offsetX, y: e.offsetY };
+}
+
+function startDraw(e) {
   drawing = true;
+  const p = getPos(e);
   ctx.beginPath();
-  ctx.moveTo(e.offsetX, e.offsetY);
-});
+  ctx.moveTo(p.x, p.y);
+}
 
-canvas.addEventListener("mousemove", e => {
+function draw(e) {
   if (!drawing) return;
-
-  ctx.lineTo(e.offsetX, e.offsetY);
+  const p = getPos(e);
+  ctx.lineTo(p.x, p.y);
   ctx.stroke();
-});
+}
 
-canvas.addEventListener("mouseup", () => {
+function endDraw() {
   drawing = false;
   saveHistory();
-});
+}
+
+canvas.addEventListener("mousedown", startDraw);
+canvas.addEventListener("mousemove", draw);
+canvas.addEventListener("mouseup", endDraw);
+
+canvas.addEventListener("touchstart", startDraw);
+canvas.addEventListener("touchmove", draw);
+canvas.addEventListener("touchend", endDraw);
 
 document.getElementById("penBtn").onclick = () => {
   mode = "pen";
   ctx.globalCompositeOperation = "source-over";
+  ctx.lineWidth = penWidth;
 };
 
 document.getElementById("eraserBtn").onclick = () => {
   mode = "eraser";
   ctx.globalCompositeOperation = "destination-out";
+  ctx.lineWidth = eraserWidth;
 };
 
 document.getElementById("colorPicker").onchange = e => {
   ctx.strokeStyle = e.target.value;
 };
 
-document.getElementById("penSize").onchange = e => {
-  ctx.lineWidth = e.target.value;
+document.getElementById("penSize").oninput = e => {
+  penWidth = e.target.value;
+  if (mode === "pen") ctx.lineWidth = penWidth;
+  drawPreview(penPreview, penWidth);
 };
 
-document.getElementById("eraserSize").onchange = e => {
-  ctx.lineWidth = e.target.value;
+document.getElementById("eraserSize").oninput = e => {
+  eraserWidth = e.target.value;
+  if (mode === "eraser") ctx.lineWidth = eraserWidth;
+  drawPreview(eraserPreview, eraserWidth);
 };
+
+function drawPreview(ctx, size) {
+  ctx.clearRect(0, 0, 40, 40);
+  ctx.beginPath();
+  ctx.arc(20, 20, size / 2, 0, Math.PI * 2);
+  ctx.fillStyle = "black";
+  ctx.fill();
+}
 
 function saveHistory() {
   history = history.slice(0, historyIndex + 1);
@@ -88,10 +129,9 @@ function restore() {
   };
 }
 
-document.getElementById("hideCanvas").onclick = () => {
-  canvas.style.display = "none";
+document.getElementById("toggleCanvas").onchange = e => {
+  canvas.style.display = e.target.checked ? "block" : "none";
 };
 
-document.getElementById("showCanvas").onclick = () => {
-  canvas.style.display = "block";
-};
+drawPreview(penPreview, penWidth);
+drawPreview(eraserPreview, eraserWidth);
