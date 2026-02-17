@@ -1,15 +1,22 @@
 body {
+  margin: 0;
   touch-action: none;
 }
 
+#viewport {
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+}
+
 #canvasWrapper {
-  position: relative;
-  display: inline-block;
+  position: absolute;
+  transform-origin: 0 0;
 }
 
 #baseImage {
   display: block;
-  max-width: 100%;
+  max-width: none;
 }
 
 #drawCanvas {
@@ -19,7 +26,18 @@ body {
 }
 
 .controls {
-  margin-top: 10px;
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  background: rgba(255,255,255,0.95);
+  padding: 10px;
+  border-radius: 8px;
+  z-index: 1000;
+}
+
+button.active {
+  background: #4caf50;
+  color: white;
 }
 
 label {
