@@ -1,0 +1,19 @@
+#canvasWrapper {
+  position: relative;
+  display: inline-block;
+}
+
+#baseImage {
+  display: block;
+  max-width: 600px;
+}
+
+#drawCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.controls {
+  margin-top: 10px;
+}
