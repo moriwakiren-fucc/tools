@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>画像お絵かきサイト</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<input type="file" id="imageInput">
+
+<div id="canvasWrapper">
+  <img id="baseImage">
+  <canvas id="drawCanvas"></canvas>
+</div>
+
+<div class="controls">
+  <button id="penBtn">ペン</button>
+  <input type="color" id="colorPicker">
+  <input type="range" id="penSize" min="1" max="20">
+
+  <button id="eraserBtn">消しゴム</button>
+  <input type="range" id="eraserSize" min="5" max="50">
+
+  <button id="undoBtn">取り消す</button>
+  <button id="redoBtn">やり直し</button>
+
+  <button id="showCanvas">ペンの跡を表示</button>
+  <button id="hideCanvas">ペンの跡を非表示</button>
+</div>
+
+<script src="main.js"></script>
+</body>
+</html>
