@@ -4,7 +4,7 @@ st.title('ラベルを作ろう')
 name = st.text_input("名前※全角3文字まで（半角は4/7文字扱い）")
 input = st.text_area("メッセージを入力！※1行あたり全角25文字まで（半角は4/7文字扱い）")
 half_pattern = re.compile(r'[ -~ｦ-ﾟ]')
-matches_name = 1 - len(half_pattern.findall(name)) * 3 / 7
+matches_name = len(name) - len(half_pattern.findall(name)) * 3 / 7
 if matches_name > 25 / 7:
     st.error('名前が長いです！')
 text = ""
