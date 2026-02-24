@@ -1,6 +1,7 @@
 import streamlit as st
-st.title('メッセージを入力！')
-input = st.text_area("")
+st.title('ラベルを作ろう')
+input = st.text_area("メッセージを入力！")
+input = st.text_input("名前")
 text = ""
 hamidashi = False
 num = 0
