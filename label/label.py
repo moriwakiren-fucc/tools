@@ -8,7 +8,7 @@ texts = [""]
 for j in range(len(input)):
     if num < 34:
         if input[j] == "\n":
-            texts[i] += input[j]
+            texts[i] += "  \n"
         else:
             texts[i] += input[j]
         num += 1
