@@ -55,5 +55,5 @@ st.header("1行ずつコピー")
 for i in range(5):
     st.code(texts[i])
 st.divider()
-st.header("コピー")
+st.header("コピー（送信用）")
 st.code("".join(texts) + '\n｜' + name)
