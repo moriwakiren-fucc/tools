@@ -39,5 +39,5 @@ output = "  \n".join(texts) + "｜" + name
 st.write(output)
 if hamidashi:
     st.error("これ以上は入りません。文章を短くしてください。")
-html = '<style>table,td,tr{border:none; outline:none;}</style><table style=\"width: 100%; font-family: sans-serif;\"><tr><td colspan=\"2\">'+texts[0]+'</td></tr><tr><td colspan=\"2\">'+texts[1]+'</td></tr><tr><td colspan=\"2\">'+texts[2]+'</td></tr><tr><td colspan=\"2\">'+texts[3]+'</td></tr><tr><td>'+texts[4]+'</td><td>'+name+'</td></tr></table>'
+html = '<table style="width: 100%; font-family: sans-serif;"><tr><td colspan="2">'+texts[0]+'</td></tr><tr><td colspan="2">'+texts[1]+'</td></tr><tr><td colspan="2">'+texts[2]+'</td></tr><tr><td colspan="2">'+texts[3]+'</td></tr><tr><td>'+texts[4]+'</td><td style="width: 30%; border-left:1px #000000;"">'+name+'</td></tr></table>'
 st.markdown(html, unsafe_allow_html=True)
