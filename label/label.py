@@ -10,7 +10,7 @@ for j in range(len(input)):
     if i >= 4:
         hamidashi = True
         break
-    elif num < 34:
+    elif num < 25:
         if input[j] == "\n":
             texts[i] += "  \n"
             i += 1
@@ -28,5 +28,5 @@ st.write(output)
 st.write(i)
 if hamidashi:
     st.error("これ以上は入りません。文章を短くしてください。")
-html = "<img src=\"https://moriwakiren-fucc.github.io/tools/label/thanklabel.jpeg\" style=\"width: 100vw;\">"
+html = "<div><img src=\"https://moriwakiren-fucc.github.io/tools/label/thanklabel.jpeg\" style=\"width: 100vw;\">"
 st.markdown(html, unsafe_allow_html=True)
