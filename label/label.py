@@ -22,4 +22,4 @@ for j in range(len(input)):
 output = "  \n".join(texts)
 st.write(output)
 if hamidashi:
-    st.write("s")
+    st.warning("これ以上は入りません。文章を短くしてください。")
