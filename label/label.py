@@ -59,9 +59,9 @@ for i in range(5):
     st.code(texts[i])
 st.divider()
 st.header("コピー（送信用）")
-st.write('以下の枠内の右上ら辺をタップ')
-st.write('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→✔️がついたらOK')
-st.write('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→森脇に送信')
+st.markdown('<p>以下の枠内の右上ら辺をタップ</p>')
+st.markdown('<p>　　　→✔️がついたらOK</p>')
+st.markdown('<p>　　　　　　→<a href="https://docs.google.com/forms/d/e/1FAIpQLSczbh5CG3XReuUoyPDB0iiAJMBBp0ui_FnOnSQGEgB0onCl1Q/viewform?usp=header">森脇に送信</a></p>')
 
 # コピーするテキスト
 text = "\n".join(texts) + "\n｜" + name + "\nhttps://ujwp3bjnyphoklyj4gntpc.streamlit.app"
