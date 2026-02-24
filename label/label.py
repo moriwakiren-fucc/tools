@@ -2,11 +2,14 @@ import streamlit as st
 st.title('メッセージを入力！')
 input = st.text_area("")
 text = ""
+hamidashi = False
 num = 0
 i = 0
 texts = [""]
 for j in range(len(input)):
-    if num < 34:
+    if i > 4:
+        hamidashi = True
+    elif num < 34:
         if input[j] == "\n":
             texts[i] += "  \n"
         else:
@@ -18,3 +21,5 @@ for j in range(len(input)):
         i += 1
 output = "  \n".join(texts)
 st.write(output)
+if hamidashi:
+    st.write("s")
