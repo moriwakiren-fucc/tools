@@ -1,8 +1,8 @@
 import streamlit as st
 st.title('メッセージを入力！')
-input = st.text_area("e")
+input = st.text_area("")
 text = ""
-num
+num = 0
 i = 0
 texts = []
 for j in range(len(input)):
