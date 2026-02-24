@@ -42,5 +42,5 @@ output = "  \n".join(texts) + "｜" + name
 st.write(output)
 if hamidashi:
     st.error("これ以上は入りません。文章を短くしてください。")
-html = "<div><img src=\"https://moriwakiren-fucc.github.io/tools/label/thanklabel.jpeg\" style=\"width: 100vw;\">"
+html = f"<p style=\"width: 100vw; font-family: sans-serif;\">{output}</p>"
 st.markdown(html, unsafe_allow_html=True)
