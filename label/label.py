@@ -36,7 +36,6 @@ for j in range(len(input)):
             half_pattern = re.compile(r'[ -~ｦ-ﾟ]')
             matches = 1 - len(half_pattern.findall(input[j])) * 3 / 7
             num += matches
-            num += 1
     else:
         num = 0
         i += 1
