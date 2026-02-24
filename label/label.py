@@ -50,6 +50,6 @@ st.markdown(html, unsafe_allow_html=True)
 st.markdown('<img src="https://moriwakiren-fucc.github.io/tools/label/thanklabel.jpeg" style="width:100%;">', unsafe_allow_html=True)
 st.divider()
 st.header("コピー")
-st.code("  \n".join(texts))
+st.code("  \n".join(texts) + '  \n  \n' + name)
 if hamidashi:
     st.error("これ以上は入りません。文章を短くしてください。")
