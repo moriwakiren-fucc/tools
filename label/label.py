@@ -1,3 +1,4 @@
+import re
 import streamlit as st
 st.title('ラベルを作ろう')
 input = st.text_area("メッセージを入力！※1行あたり全角34文字まで")
