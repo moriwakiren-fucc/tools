@@ -1,7 +1,7 @@
 import streamlit as st
 st.title('ラベルを作ろう')
-input = st.text_area("メッセージを入力！")
-name = st.text_input("名前")
+input = st.text_area("メッセージを入力！※1行あたり全角34文字まで")
+name = st.text_input("名前※全角3文字まで")
 text = ""
 hamidashi = False
 num = 0
