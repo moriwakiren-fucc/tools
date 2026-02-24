@@ -63,5 +63,5 @@ st.header("コピー（送信用）")
 text_to_copy = "\n".join(texts) + '\n｜' + name + "\nhttps://ujwp3bjnyphoklyj4gntpc.streamlit.app"
 
 # HTMLとJavaScriptを使用してクリップボードにコピーする機能を実装
-copy_html = f"<button onclick='navigator.clipboard.writeText(\"{text_to_copy}\")'>Copy to clipboard</button>"
+copy_html = f"<button onclick='navigator.clipboard.writeText(\"{text_to_copy}\")'>Copy to clipboard<\/button>"
 st.markdown(copy_html, unsafe_allow_html=True)
