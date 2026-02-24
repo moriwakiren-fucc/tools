@@ -1,5 +1,6 @@
 import re
 import streamlit as st
+from streamlit.components.v1 import html
 st.header('入力')
 name = st.text_input("名前　 ※全角25/7文字まで（半角は4/7文字扱い）")
 input = st.text_area("メッセージ 　※1行あたり全角25文字まで（半角は4/7文字扱い）")
@@ -63,5 +64,5 @@ st.header("コピー（送信用）")
 text_to_copy = "\n".join(texts) + '\n｜' + name + "\nhttps://ujwp3bjnyphoklyj4gntpc.streamlit.app"
 
 # HTMLとJavaScriptを使用してクリップボードにコピーする機能を実装
-copy_html = f"<button onclick='navigator.clipboard.writeText(\"{text_to_copy}\")'>Copy to clipboard<\/button>"
-st.markdown(copy_html, unsafe_allow_html=True)
+copy_html = f"""<button onclick='navigator.clipboard.writeText(\"{text_to_copy}\")'>Copy to clipboard<\/button>"""
+html(copy_button_html, height=50)
