@@ -56,4 +56,4 @@ for i in range(5):
     st.code(texts[i])
 st.divider()
 st.header("コピー（送信用）")
-st.code("".join(texts) + '\n｜' + name + "https://ujwp3bjnyphoklyj4gntpc.streamlit.app")
+st.code("".join(texts) + '\n｜' + name + "\nhttps://ujwp3bjnyphoklyj4gntpc.streamlit.app")
