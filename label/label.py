@@ -7,6 +7,7 @@ i = 0
 texts = [""]
 for j in range(len(input)):
     if num < 34:
+        st.write(input[j])
         texts[i] += input[j]
         num += 1
     else:
