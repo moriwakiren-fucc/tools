@@ -47,7 +47,7 @@ for j in range(len(input)):
         texts[i] += input[j]
 st.header("プレビュー")
 if hamidashi:
-    st.error("文章が長いなぁ…。　文章を短くして！")
+    st.error("文章が長いなぁ…。　短くして！")
 else:
     st.success("送信する場合は、一番下のテキストをコピー！")
 html = '<table style="width: 27em; font-family: sans-serif;"><tr><td colspan="2">'+texts[0]+'</td></tr><tr><td colspan="2">'+texts[1]+'</td></tr><tr><td colspan="2">'+texts[2]+'</td></tr><tr><td colspan="2">'+texts[3]+'</td></tr><tr><td>'+texts[4]+'</td><td style="width: 5em; border-left:2px #000000 solid; text-align:right;">'+name+'</td></tr></table>'
