@@ -34,9 +34,10 @@ for j in range(len(input)):
     else:
         num = 0
         i += 1
+
 output = "  \n".join(texts) + "｜" + name
 st.write(output)
 if hamidashi:
     st.error("これ以上は入りません。文章を短くしてください。")
-html = f"<p style=\"width: 100vw; font-family: sans-serif;\">{output}</p>"
+html = f"<table style=\"width: 100vw; font-family: sans-serif;\"><tr><td colspan="2">{texts[0]}</td></tr><tr><td colspan="2">{texts[1]}</td></tr><tr><td colspan="2">{texts[2]}</td></tr><tr><td colspan="2">{texts[3]}</td></tr><tr><td>{texts[4]}</td><td>{name}</td></tr></table></p>"
 st.markdown(html, unsafe_allow_html=True)
