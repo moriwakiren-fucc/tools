@@ -56,4 +56,4 @@ for i in range(5):
     st.code(texts[i])
 st.divider()
 st.header("コピー")
-st.code("".join(texts) + '\n\n' + name)
+st.code("".join(texts) + '\n｜' + name)
