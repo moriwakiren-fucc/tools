@@ -68,5 +68,5 @@ st.code(text, language="")
 js_text = json.dumps(text)
 
 html = f'<button onclick="navigator.clipboard.writeText(`{js_text}`)">クリップボードにコピー</button>'
-html = html.replace("\/", r"\/")
+html = html.replace("\/", "\\/")
 st.markdown(html ,unsafe_allow_html=True)
