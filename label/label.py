@@ -12,6 +12,8 @@ for j in range(len(input)):
     if num < 34:
         if input[j] == "\n":
             texts[i] += "  \n"
+            i += 1
+            num = 0
         else:
             texts[i] += input[j]
         num += 1
