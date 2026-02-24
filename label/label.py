@@ -21,7 +21,7 @@ for j in range(len(input)):
     elif i == 4:
         if num < 20:
             if input[j] == "\n":
-                texts[i] += "  \n"
+                texts[i] += "\n"
                 i += 1
                 num = 0
             else:
@@ -34,7 +34,7 @@ for j in range(len(input)):
             i += 1
     elif num < 25:
         if input[j] == "\n":
-            texts[i] += "  \n"
+            texts[i] += "\n"
             i += 1
             num = 0
         else:
