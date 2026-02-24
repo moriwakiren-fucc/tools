@@ -1,7 +1,7 @@
-import streamlit as st
+えimport streamlit as st
 st.title('ラベルを作ろう')
 input = st.text_area("メッセージを入力！")
-input = st.text_input("名前")
+name = st.text_input("名前")
 text = ""
 hamidashi = False
 num = 0
@@ -38,7 +38,7 @@ for j in range(len(input)):
         num = 0
         texts.append("")
         i += 1
-output = "  \n".join(texts) + "｜"
+output = "  \n".join(texts) + "｜"　+ name
 st.write(output)
 if hamidashi:
     st.error("これ以上は入りません。文章を短くしてください。")
