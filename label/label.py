@@ -1,6 +1,6 @@
 import streamlit as st
 st.title('メッセージを入力！')
-input = st.text_area("")
+input = st.text_area("e")
 text = ""
 num
 i = 0
