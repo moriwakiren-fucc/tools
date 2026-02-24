@@ -47,5 +47,6 @@ for j in range(len(input)):
 output = "  \n".join(texts) + "｜" + name
 html = '<table style="width: 100%; font-family: sans-serif;"><tr><td colspan="2">'+texts[0]+'</td></tr><tr><td colspan="2">'+texts[1]+'</td></tr><tr><td colspan="2">'+texts[2]+'</td></tr><tr><td colspan="2">'+texts[3]+'</td></tr><tr><td>'+texts[4]+'</td><td style="width: 30%; border-left:2px #000000 solid;">'+name+'</td></tr></table>'
 st.markdown(html, unsafe_allow_html=True)
+st.code(texts[0])
 if hamidashi:
     st.error("これ以上は入りません。文章を短くしてください。")
