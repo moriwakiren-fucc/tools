@@ -51,5 +51,9 @@ html = '<table style="width: 100%; font-family: sans-serif;"><tr><td colspan="2"
 st.markdown(html, unsafe_allow_html=True)
 st.markdown('<img src="https://moriwakiren-fucc.github.io/tools/label/thanklabel.jpeg" style="width:100%;">', unsafe_allow_html=True)
 st.divider()
+st.header("1行ずつコピー")
+for i in range(5):
+    st.code(texts[i])
+st.divider()
 st.header("コピー")
 st.code("\n".join(texts) + '\n\n' + name)
