@@ -1,7 +1,7 @@
 import re
 import streamlit as st
 st.header('入力')
-name = st.text_input("名前　 ※全角3文字まで（半角は4/7文字扱い）")
+name = st.text_input("名前　 ※全角25/7文字まで（半角は4/7文字扱い）")
 input = st.text_area("メッセージ 　※1行あたり全角25文字まで（半角は4/7文字扱い）")
 half_pattern = re.compile(r'[ -~ｦ-ﾟ]')
 matches_name = len(name) - len(half_pattern.findall(name)) * 3 / 7
