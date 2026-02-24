@@ -28,3 +28,5 @@ st.write(output)
 st.write(i)
 if hamidashi:
     st.error("これ以上は入りません。文章を短くしてください。")
+html = "<img src=\"https://moriwakiren-fucc.github.io/tools/label/thanklabel.jpeg\" style=\"width: 100vw;\">"
+st.markdown(html, unsafe_allow_html=True)
