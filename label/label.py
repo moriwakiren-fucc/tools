@@ -1,7 +1,7 @@
 import re
 import streamlit as st
 import json
-
+st.set_page_config(page_title="ラベル（メッセージ）入力", page_icon="👋")
 st.header('入力')
 name = st.text_input("名前　 ※全角25/7文字まで（半角は4/7文字扱い）")
 input = st.text_area("メッセージ 　※1行あたり全角25文字まで（半角は4/7文字扱い）")
