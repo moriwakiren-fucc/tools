@@ -27,4 +27,4 @@ output = "  \n".join(texts)
 st.write(output)
 st.write(i)
 if hamidashi:
-    st.warning("これ以上は入りません。文章を短くしてください。")
+    st.error("これ以上は入りません。文章を短くしてください。")
