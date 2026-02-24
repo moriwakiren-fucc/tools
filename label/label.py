@@ -6,7 +6,7 @@ input = st.text_area("メッセージ 　※1行あたり全角25文字まで（
 half_pattern = re.compile(r'[ -~ｦ-ﾟ]')
 matches_name = len(name) - len(half_pattern.findall(name)) * 3 / 7
 if matches_name > 25 / 7:
-    st.error('名前が長いです！')
+    st.warming('名前が長いです！フォントを小さくする？')
 text = ""
 hamidashi = False
 num = 0
