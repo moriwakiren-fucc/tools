@@ -7,10 +7,10 @@ num = 0
 i = 0
 texts = [""]
 for j in range(len(input)):
-    if i >= 3:
+    if i >= 4:
         hamidashi = True
         break
-    elif i == 4:
+    elif i == 3:
         if num < 20:
             if input[j] == "\n":
                 texts[i] += "  \n"
