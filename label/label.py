@@ -4,10 +4,11 @@ st.set_page_config(page_title="ラベル（メッセージ）入力")
 st.header('入力')
 name = st.text_input("名前　 ※全角「 25/7 文字」まで（半角は 4/7 文字扱い）")
 input = st.text_area("メッセージ 　※1行あたり全角「 25 文字」まで（半角は 4/7 文字扱い）")
+st.button("文字数判定")
 half_pattern = re.compile(r'[ -~ｦ-ﾟ]')
 matches_name = len(name) - len(half_pattern.findall(name)) * 3 / 7
 if matches_name > 25 / 7:
-    st.warning('名前が長いなぁ…。フォントを小さくして入れることはできるけど、どうする？')
+    st.warning('名前が長いです…。フォントを小さくして入れることはできるけど、どうしますか？')
 hamidashi = False
 num = 0
 i = 0
@@ -46,9 +47,9 @@ for j in range(len(input)):
         texts[i] += input[j]
 st.header("プレビュー")
 if hamidashi:
-    st.error("文章が長いなぁ…。　短くして！")
+    st.error("文章が長いです…。　短くしてください🙇‍♀️")
 else:
-    st.success("送信する場合は、一番下のテキストをコピー！")
+    st.success("送信する場合は、一番下のテキストをコピーしてください！")
 html = '<table style="width: 27em; font-family: sans-serif;"><tr><td colspan="2">'+texts[0]+'</td></tr><tr><td colspan="2">'+texts[1]+'</td></tr><tr><td colspan="2">'+texts[2]+'</td></tr><tr><td colspan="2">'+texts[3]+'</td></tr><tr><td>'+texts[4]+'</td><td style="width: 5em; border-left:2px #000000 solid; text-align:right;">'+name+'</td></tr></table>'
 st.markdown(html, unsafe_allow_html=True)
 st.markdown('<img src="https://moriwakiren-fucc.github.io/tools/label/thanklabel.jpeg" style="width:100%;">', unsafe_allow_html=True)
@@ -60,7 +61,7 @@ st.divider()
 st.header("コピー（送信用）")
 st.markdown('<p>以下の枠内の右上ら辺をタップ</p>', unsafe_allow_html=True)
 st.markdown('<p>　　　→✔️がついたらOK</p>', unsafe_allow_html=True)
-st.markdown('<p>　　　　　　→<a href="https://docs.google.com/forms/d/e/1FAIpQLSczbh5CG3XReuUoyPDB0iiAJMBBp0ui_FnOnSQGEgB0onCl1Q/viewform?usp=header">森脇に送信</a></p>', unsafe_allow_html=True)
+st.markdown('<p>　　　　　　→森脇に送信</p>', unsafe_allow_html=True)
 
 # コピーするテキスト
 text = "\n".join(texts) + "\n｜" + name + "\nhttps://ujwp3bjnyphoklyj4gntpc.streamlit.app"
