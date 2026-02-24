@@ -7,7 +7,7 @@ num = 0
 i = 0
 texts = [""]
 for j in range(len(input)):
-    if i > 4:
+    if i >= 4:
         hamidashi = True
         break
     elif num < 34:
