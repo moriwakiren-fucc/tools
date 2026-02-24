@@ -65,7 +65,7 @@ st.code(text, language="")
 
 st.markdown(
     f"""
-    <button onclick="navigator.clipboard.writeText('{text}')">
+    <button onclick="navigator.clipboard.writeText(`{text}`)">
         クリップボードにコピー
     </button>
     """,
