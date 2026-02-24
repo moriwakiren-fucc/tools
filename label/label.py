@@ -9,6 +9,7 @@ texts = [""]
 for j in range(len(input)):
     if i > 4:
         hamidashi = True
+        break
     elif num < 34:
         if input[j] == "\n":
             texts[i] += "  \n"
