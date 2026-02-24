@@ -60,8 +60,8 @@ for i in range(5):
 st.divider()
 st.header("コピー（送信用）")
 st.write('以下の枠内の右上ら辺をタップ')
-st.write('  →✔️がついたらOK')
-st.write('  →森脇に送信')
+st.write(r'  →✔️がついたらOK')
+st.write(r'  →森脇に送信')
 
 # コピーするテキスト
 text = "\n".join(texts) + "\n｜" + name + "\nhttps://ujwp3bjnyphoklyj4gntpc.streamlit.app"
