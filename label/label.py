@@ -4,7 +4,7 @@ input = st.text_area("")
 text = ""
 num = 0
 i = 0
-texts = []
+texts = [""]
 for j in range(len(input)):
     if num <= 34:
         st.write(num)
