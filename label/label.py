@@ -1,6 +1,6 @@
 import re
 import streamlit as st
-st.title('ラベルを作ろう')
+st.header('入力')
 name = st.text_input("名前※全角3文字まで（半角は4/7文字扱い）")
 input = st.text_area("メッセージを入力！※1行あたり全角25文字まで（半角は4/7文字扱い）")
 half_pattern = re.compile(r'[ -~ｦ-ﾟ]')
@@ -44,9 +44,11 @@ for j in range(len(input)):
         num = 0
         i += 1
         texts[i] += input[j]
-output = "  \n".join(texts) + "｜" + name
+st.header("プレビュー")
 html = '<table style="width: 100%; font-family: sans-serif;"><tr><td colspan="2">'+texts[0]+'</td></tr><tr><td colspan="2">'+texts[1]+'</td></tr><tr><td colspan="2">'+texts[2]+'</td></tr><tr><td colspan="2">'+texts[3]+'</td></tr><tr><td>'+texts[4]+'</td><td style="width: 30%; border-left:2px #000000 solid;">'+name+'</td></tr></table>'
 st.markdown(html, unsafe_allow_html=True)
+st.markdown('<img src="https://moriwakiren-fucc.github.io/tools/label/thanklabel.jpeg" style="width:100%;">', unsafe_allow_html=True)
+st.divider()
 st.code(texts[0])
 if hamidashi:
     st.error("これ以上は入りません。文章を短くしてください。")
