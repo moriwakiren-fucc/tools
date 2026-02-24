@@ -58,4 +58,12 @@ for i in range(5):
     st.code(texts[i])
 st.divider()
 st.header("コピー（送信用）")
-st.code("".join(texts) + '\n｜' + name + "\nhttps://ujwp3bjnyphoklyj4gntpc.streamlit.app")
+
+# コピーするテキスト
+text_to_copy = "".join(texts) + '\n｜' + name + "\nhttps://ujwp3bjnyphoklyj4gntpc.streamlit.app"
+
+# HTMLとJavaScriptを使用してクリップボードにコピーする機能を実装
+copy_html = f"""
+<button onclick='navigator.clipboard.writeText("{text_to_copy}")'>Copy to clipboard</button>
+"""
+st.markdown(copy_html, unsafe_allow_html=True)
