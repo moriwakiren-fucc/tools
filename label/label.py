@@ -10,7 +10,7 @@ if st.button("文字数判定＆プレビュー反映"):
 half_pattern = re.compile(r'[ -~ｦ-ﾟ]')
 matches_name = len(name) - len(half_pattern.findall(name)) * 3 / 7
 if matches_name > 25 / 7:
-    st.warning('名前が長いです…。フォントを小さくして入れることはできるけど、どうしますか？')
+    st.warning('名前が長いです…。フォントを小さくして入れることはできますが、、どうしますか？')
 hamidashi = False
 num = 0
 i = 0
@@ -47,11 +47,11 @@ for j in range(len(input)):
         num = 0
         i += 1
         texts[i] += input[j]
-st.header("プレビュー")
 if hamidashi:
     st.error("文章が長いです…。　短くしてください🙇‍♀️")
 else:
     st.success("送信する場合は、一番下のテキストをコピーしてください！")
+st.header("プレビュー")
 html = '<table style="width: 27em; font-family: sans-serif;"><tr><td colspan="2">'+texts[0]+'</td></tr><tr><td colspan="2">'+texts[1]+'</td></tr><tr><td colspan="2">'+texts[2]+'</td></tr><tr><td colspan="2">'+texts[3]+'</td></tr><tr><td>'+texts[4]+'</td><td style="width: 5em; border-left:2px #000000 solid; text-align:right;">'+name+'</td></tr></table>'
 st.markdown(html, unsafe_allow_html=True)
 st.markdown('<img src="https://moriwakiren-fucc.github.io/tools/label/thanklabel.jpeg" style="width:100%;">', unsafe_allow_html=True)
