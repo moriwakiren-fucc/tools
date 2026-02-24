@@ -11,5 +11,6 @@ for j in range(len(input)):
         num += 1
     else:
         num = 0
+        texts.append("")
         i += 1
 st.write(texts)
