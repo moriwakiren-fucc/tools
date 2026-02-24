@@ -1,5 +1,7 @@
 import re
 import streamlit as st
+import json
+
 st.header('入力')
 name = st.text_input("名前　 ※全角25/7文字まで（半角は4/7文字扱い）")
 input = st.text_area("メッセージ 　※1行あたり全角25文字まで（半角は4/7文字扱い）")
@@ -59,13 +61,15 @@ st.divider()
 st.header("コピー（送信用）")
 
 # コピーするテキスト
-text = r"\n".join(texts) + r"\n｜" + name + r"\nhttps://ujwp3bjnyphoklyj4gntpc.streamlit.app"
+text = "\n".join(texts) + "\n｜" + name + "\nhttps://ujwp3bjnyphoklyj4gntpc.streamlit.app"
 
 st.code(text, language="")
 
+js_text = json.dumps(text)
+
 st.markdown(
     f"""
-    <button onclick="navigator.clipboard.writeText(`{text}`)">
+    <button onclick="navigator.clipboard.writeText({js_text})">
         クリップボードにコピー
     </button>
     """,
