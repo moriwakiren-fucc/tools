@@ -8,7 +8,7 @@ if st.button("文字数判定＆プレビュー反映"):
     time.sleep(0.01)
 half_pattern = re.compile(r'[ -~ｦ-ﾟ]')
 matches_name = len(name) - len(half_pattern.findall(name)) * 3 / 7
-if matches_name > 25 / 7:
+if matches_name > 4:
     st.warning('名前が長いです…。フォントを小さくして入れることはできますが、、どうしますか？')
 hamidashi = False
 num = 0
