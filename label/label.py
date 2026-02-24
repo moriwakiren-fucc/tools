@@ -14,6 +14,7 @@ for j in range(len(input)):
             texts[i] += "  \n"
             i += 1
             num = 0
+            texts.append("")
         else:
             texts[i] += input[j]
         num += 1
