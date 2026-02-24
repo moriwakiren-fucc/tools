@@ -33,7 +33,7 @@ for j in range(len(input)):
         else:
             num = 0
             i += 1
-    elif num < 25:
+    elif num <= 25:
         if input[j] == "\n":
             texts[i] += "  \n"
             i += 1
