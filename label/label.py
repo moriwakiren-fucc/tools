@@ -64,5 +64,24 @@ st.header("コピー（送信用）")
 text_to_copy = "\n".join(texts) + '\n｜' + name + "\nhttps://ujwp3bjnyphoklyj4gntpc.streamlit.app"
 
 # HTMLとJavaScriptを使用してクリップボードにコピーする機能を実装
-copy_html = f"""<button onclick='navigator.clipboard.writeText(\"{text_to_copy}\")'>Copy to clipboard</button>"""
-html(copy_html, height=50)
+copy_button_html = f"""
+<textarea id="hiddenTextArea" style="opacity: 0; position: absolute; z-index: -1;">{text_to_copy}</textarea>
+<button onclick="copyText()">Copy to clipboard</button>
+<script>
+function copyText() {{
+  // テキストエリアを選択
+  var copyTextArea = document.getElementById("hiddenTextArea");
+  copyTextArea.focus();
+  copyTextArea.select();
+  try {{
+    // テキストをクリップボードにコピー
+    var successful = document.execCommand('copy');
+    var msg = successful ? 'successful' : 'unsuccessful';
+    console.log('Copying text command was ' + msg);
+  }} catch (err) {{
+    console.log('Oops, unable to copy', err);
+  }}
+}}
+</script>
+"""
+html(copy_button_html, height=50)
