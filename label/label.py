@@ -39,7 +39,6 @@ for j in range(len(input)):
         i += 1
 output = "  \n".join(texts)
 st.write(output)
-st.write(i)
 if hamidashi:
     st.error("これ以上は入りません。文章を短くしてください。")
 html = "<div><img src=\"https://moriwakiren-fucc.github.io/tools/label/thanklabel.jpeg\" style=\"width: 100vw;\">"
