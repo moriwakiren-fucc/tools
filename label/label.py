@@ -6,7 +6,7 @@ text = ""
 hamidashi = False
 num = 0
 i = 0
-texts = ["","","",""]
+texts = ["","","","",""]
 for j in range(len(input)):
     if i >= 5:
         hamidashi = True
