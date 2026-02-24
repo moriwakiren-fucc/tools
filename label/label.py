@@ -47,7 +47,7 @@ for j in range(len(input)):
 st.header("プレビュー")
 if hamidashi:
     st.error("長いです！文章を短くしてください。")
-html = '<table style="width: 30em; font-family: sans-serif;"><tr><td colspan="2">'+texts[0]+'</td></tr><tr><td colspan="2">'+texts[1]+'</td></tr><tr><td colspan="2">'+texts[2]+'</td></tr><tr><td colspan="2">'+texts[3]+'</td></tr><tr><td>'+texts[4]+'</td><td style="width: 30%; border-left:2px #000000 solid; text-align:right;">'+name+'</td></tr></table>'
+html = '<table style="width: 25em; font-family: sans-serif;"><tr><td colspan="2">'+texts[0]+'</td></tr><tr><td colspan="2">'+texts[1]+'</td></tr><tr><td colspan="2">'+texts[2]+'</td></tr><tr><td colspan="2">'+texts[3]+'</td></tr><tr><td>'+texts[4]+'</td><td style="width: 30%; border-left:2px #000000 solid; text-align:right;">'+name+'</td></tr></table>'
 st.markdown(html, unsafe_allow_html=True)
 st.markdown('<img src="https://moriwakiren-fucc.github.io/tools/label/thanklabel.jpeg" style="width:100%;">', unsafe_allow_html=True)
 st.divider()
