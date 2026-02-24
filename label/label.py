@@ -14,4 +14,4 @@ for j in range(len(input)):
         texts.append("")
         i += 1
 output = print('\n'.join(texts))
-st.write(texts)
+st.write(output)
