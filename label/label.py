@@ -1,4 +1,4 @@
-import re
+えimport re
 import streamlit as st
 st.title('ラベルを作ろう')
 input = st.text_area("メッセージを入力！※1行あたり全角34文字まで")
@@ -39,6 +39,7 @@ for j in range(len(input)):
     else:
         num = 0
         i += 1
+        texts[i] += input[j]
 output = "  \n".join(texts) + "｜" + name
 html = '<table style="width: 100%; font-family: sans-serif;"><tr><td colspan="2">'+texts[0]+'</td></tr><tr><td colspan="2">'+texts[1]+'</td></tr><tr><td colspan="2">'+texts[2]+'</td></tr><tr><td colspan="2">'+texts[3]+'</td></tr><tr><td>'+texts[4]+'</td><td style="width: 30%; border-left:2px #000000 solid;">'+name+'</td></tr></table>'
 st.markdown(html, unsafe_allow_html=True)
