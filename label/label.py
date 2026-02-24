@@ -1,8 +1,8 @@
 import re
 import streamlit as st
 st.title('ラベルを作ろう')
-input = st.text_area("メッセージを入力！※1行あたり全角34文字まで")
-name = st.text_input("名前※全角3文字まで")
+input = st.text_area("メッセージを入力！※1行あたり全角25文字まで（半角は4/7文字扱い）")
+name = st.text_input("名前※全角3文字まで（半角は4/7文字扱い）")
 text = ""
 hamidashi = False
 num = 0
