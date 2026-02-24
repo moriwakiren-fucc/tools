@@ -71,7 +71,7 @@ st.markdown(
     f"""
     <button onclick="navigator.clipboard.writeText({js_text})">
         クリップボードにコピー
-    </button>
+    <\/button>
     """,
     unsafe_allow_html=True
 )
