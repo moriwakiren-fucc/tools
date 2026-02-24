@@ -1,10 +1,12 @@
 import re
 import streamlit as st
+import time
 st.set_page_config(page_title="ラベル（メッセージ）入力")
 st.header('入力')
 name = st.text_input("名前　 ※全角「 25/7 文字」まで（半角は 4/7 文字扱い）")
 input = st.text_area("メッセージ 　※1行あたり全角「 25 文字」まで（半角は 4/7 文字扱い）")
 if st.button("文字数判定"):
+    time.sleep(0.01)
 half_pattern = re.compile(r'[ -~ｦ-ﾟ]')
 matches_name = len(name) - len(half_pattern.findall(name)) * 3 / 7
 if matches_name > 25 / 7:
