@@ -2,6 +2,10 @@ import re
 import streamlit as st
 st.title('ラベルを作ろう')
 input = st.text_area("メッセージを入力！※1行あたり全角25文字まで（半角は4/7文字扱い）")
+half_pattern = re.compile(r'[ -~ｦ-ﾟ]')
+matches_name = 1 - len(half_pattern.findall(input[j])) * 3 / 7
+if matches_name > 25 / 7:
+    st.error('名前が長いです！')
 name = st.text_input("名前※全角3文字まで（半角は4/7文字扱い）")
 text = ""
 hamidashi = False
