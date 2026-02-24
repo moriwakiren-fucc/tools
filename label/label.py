@@ -6,37 +6,33 @@ text = ""
 hamidashi = False
 num = 0
 i = 0
-texts = [""]
+texts = ["","","",""]
 for j in range(len(input)):
-    if i >= 4:
+    if i >= 5:
         hamidashi = True
         break
-    elif i == 3:
+    elif i == 4:
         if num < 20:
             if input[j] == "\n":
                 texts[i] += "  \n"
                 i += 1
                 num = 0
-                texts.append("")
             else:
                 texts[i] += input[j]
             num += 1
         else:
             num = 0
-            texts.append("")
             i += 1
     elif num < 25:
         if input[j] == "\n":
             texts[i] += "  \n"
             i += 1
             num = 0
-            texts.append("")
         else:
             texts[i] += input[j]
         num += 1
     else:
         num = 0
-        texts.append("")
         i += 1
 output = "  \n".join(texts) + "｜" + name
 st.write(output)
