@@ -8,9 +8,10 @@ texts = [""]
 for j in range(len(input)):
     if num < 34:
         if input[j] == "\n":
-            st.write(input[j])
-            texts[i] += input[j]
-            num += 1
+            input[j] = "  \n"
+        st.write(input[j])
+        texts[i] += input[j]
+        num += 1
     else:
         num = 0
         texts.append("")
