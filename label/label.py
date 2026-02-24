@@ -67,11 +67,5 @@ st.code(text, language="")
 
 js_text = json.dumps(text)
 
-st.markdown(
-    f"""
-    <button onclick="navigator.clipboard.writeText(`{js_text}`)">
-        クリップボードにコピー
-    </button>
-    """,
-    unsafe_allow_html=True
-)
+html = f"""<button onclick="navigator.clipboard.writeText(`{js_text}`)">クリップボードにコピー</button>"""
+st.markdown(code,unsafe_allow_html=True)
