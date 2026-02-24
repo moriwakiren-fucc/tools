@@ -1,6 +1,5 @@
 import re
 import streamlit as st
-from streamlit.components.v1 import html
 st.header('入力')
 name = st.text_input("名前　 ※全角25/7文字まで（半角は4/7文字扱い）")
 input = st.text_area("メッセージ 　※1行あたり全角25文字まで（半角は4/7文字扱い）")
@@ -66,7 +65,7 @@ st.code(text, language="")
 
 st.markdown(
     f"""
-    <button onclick="navigator.clipboard.writeText(`{text}`)">
+    <button onclick="navigator.clipboard.writeText('{text}')">
         クリップボードにコピー
     </button>
     """,
