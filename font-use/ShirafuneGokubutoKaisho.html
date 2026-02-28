@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <style>
+      @font-face {
+        font-family: "fontA"; /*任意のフォントファミリー名でOK*/
+        src: url("./fonts/HOT-GFKaishokk-E.otf") format("opentype"); /*fontがあるパスを書いて、formatを指定*/
+        font-display: swap;
+      }
+      .A{
+        writing-mode: vertical-rl;
+        font-size: 50px;
+        font-family: "fontA",sans-serif; /*上で設定したフォントファミリー名*/
+      }
+    </style>
+  </head>
+  <body>
+    <p class="A">右の者は本化学部の全課程を<br>修了したことを証する！</p>
+  </body>
+</html>
