@@ -232,7 +232,11 @@ async function startCamera(){
     currentStream.getTracks().forEach(t=>t.stop());
   }
   currentStream=await navigator.mediaDevices.getUserMedia({
-    video:{ facingMode:useFrontCamera?'user':'environment'},
+    video:{
+      facingMode:useFrontCamera?'user':'environment',
+      width:{ ideal:9999 },
+      height:{ ideal:9999 },
+    },
     audio:false
   });
   video.srcObject=currentStream;
