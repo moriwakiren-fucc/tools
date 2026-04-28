@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>7セグメント 画像メーカー</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #222;
+    --border: #2e2e2e;
+    --orange: #ff8800;
+    --orange-dim: #a85500;
+    --text: #e8e8e8;
+    --text-dim: #888;
+    --radius: 10px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', Courier, monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem 3rem;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  header h1 {
+    font-size: clamp(1.2rem, 4vw, 1.8rem);
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    color: var(--orange);
+    text-transform: uppercase;
+  }
+
+  header p {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-top: 0.3rem;
+    letter-spacing: 0.1em;
+  }
+
+  .main {
+    width: 100%;
+    max-width: 640px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  /* Preview */
+  .preview-wrap {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    min-height: 130px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    overflow: auto;
+  }
+
+  /* Controls panel */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .ctrl {
+    display: grid;
+    grid-template-columns: 130px 1fr 40px;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .ctrl label {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  .ctrl input[type=text] {
+    grid-column: 2 / 4;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 1rem;
+    padding: 6px 10px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .ctrl input[type=text]:focus { border-color: var(--orange); }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--orange);
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+  input[type=range]::-moz-range-thumb {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--orange);
+    border: none;
+    cursor: pointer;
+  }
+
+  .val {
+    font-size: 0.78rem;
+    color: var(--orange);
+    text-align: right;
+    min-width: 36px;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0.1rem 0;
+  }
+
+  /* Download button */
+  .dl-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--orange);
+    color: #000;
+    border: none;
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .dl-btn:hover { background: #ffaa33; }
+  .dl-btn:active { transform: scale(0.98); }
+
+  .note {
+    text-align: center;
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    letter-spacing: 0.06em;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>7 Segment Image Maker</h1>
+  <p>オレンジ縁どり / 黒塗りつぶし / 透過PNG出力</p>
+</header>
+
+<div class="main">
+
+  <div class="preview-wrap" id="preview"></div>
+
+  <div class="panel">
+    <div class="ctrl">
+      <label>表示する数値</label>
+      <input type="text" id="numInput" value="3.14" placeholder="例: 3.14, -0.5, 12">
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="ctrl">
+      <label>セグメントサイズ</label>
+      <input type="range" id="segSize" min="30" max="120" value="60" step="1">
+      <span class="val" id="segSizeVal">60</span>
+    </div>
+    <div class="ctrl">
+      <label>セグメント厚み</label>
+      <input type="range" id="segThick" min="3" max="20" value="8" step="1">
+      <span class="val" id="segThickVal">8</span>
+    </div>
+    <div class="ctrl">
+      <label>縁取りの太さ</label>
+      <input type="range" id="strokeW" min="0.5" max="10" value="2" step="0.5">
+      <span class="val" id="strokeWVal">2</span>
+    </div>
+    <div class="ctrl">
+      <label>文字間隔</label>
+      <input type="range" id="gap" min="2" max="20" value="6" step="1">
+      <span class="val" id="gapVal">6</span>
+    </div>
+    <div class="ctrl">
+      <label>余白</label>
+      <input type="range" id="pad" min="4" max="40" value="14" step="1">
+      <span class="val" id="padVal">14</span>
+    </div>
+  </div>
+
+  <button class="dl-btn" id="dlBtn">↓ PNG ダウンロード（透過背景）</button>
+  <p class="note">プレビューは白背景 — 出力PNGは透過背景 / 2倍解像度</p>
+
+</div>
+
+<script>
+const SEG_PATTERNS = {
+  '0':[1,1,1,0,1,1,1],
+  '1':[0,0,1,0,0,1,0],
+  '2':[1,0,1,1,1,0,1],
+  '3':[1,0,1,1,0,1,1],
+  '4':[0,1,1,1,0,1,0],
+  '5':[1,1,0,1,0,1,1],
+  '6':[1,1,0,1,1,1,1],
+  '7':[1,0,1,0,0,1,0],
+  '8':[1,1,1,1,1,1,1],
+  '9':[1,1,1,1,0,1,1],
+  '-':[0,0,0,1,0,0,0]
+};
+
+function getParams() {
+  return {
+    text:    document.getElementById('numInput').value || '0',
+    size:    +document.getElementById('segSize').value,
+    thick:   +document.getElementById('segThick').value,
+    strokeW: +document.getElementById('strokeW').value,
+    gap:     +document.getElementById('gap').value,
+    pad:     +document.getElementById('pad').value
+  };
+}
+
+function drawSVG(p, transparent) {
+  const { text, size, thick, strokeW, gap, pad } = p;
+  const h = size;
+  const w = Math.round(size * 0.6);
+  const sk = Math.round(thick * 0.35);
+  const or = Math.round(thick * 0.18);
+  const dotW = Math.round(thick * 1.1);
+  const STROKE = '#ff8800';
+  const FILL   = '#000000';
+  const chars  = [...text];
+
+  // Build parts list
+  const parts = [];
+  for (let i = 0; i < chars.length; i++) {
+    const c = chars[i];
+    if (c === '.') {
+      parts.push({ type: 'dot', width: dotW });
+    } else {
+      parts.push({ type: 'digit', char: c, width: w });
+    }
+  }
+
+  const totalW = parts.reduce((s, pt, i) => s + pt.width + (i < parts.length - 1 ? gap : 0), 0);
+  const svgW   = totalW + pad * 2;
+  const svgH   = h + pad * 2;
+  const bg     = transparent ? 'transparent' : '#ffffff';
+
+  let out = [`<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}">`,
+             `<rect width="${svgW}" height="${svgH}" fill="${bg}"/>`];
+
+  function hbar(ox, oy, yy, on) {
+    if (!on) return '';
+    const pts = [
+      `${ox + or},${oy + yy}`,
+      `${ox + or + sk},${oy + yy - sk}`,
+      `${ox + w - or - sk},${oy + yy - sk}`,
+      `${ox + w - or},${oy + yy}`,
+      `${ox + w - or - sk},${oy + yy + sk}`,
+      `${ox + or + sk},${oy + yy + sk}`
+    ].join(' ');
+    return `<polygon points="${pts}" fill="${FILL}" stroke="${STROKE}" stroke-width="${strokeW}" stroke-linejoin="round"/>`;
+  }
+
+  function vbar(ox, oy, xx, yy, on) {
+    if (!on) return '';
+    const half = h / 2;
+    const pts = [
+      `${ox + xx},${oy + yy + or}`,
+      `${ox + xx + sk},${oy + yy + or + sk}`,
+      `${ox + xx + sk},${oy + yy + half - or - sk}`,
+      `${ox + xx},${oy + yy + half - or}`,
+      `${ox + xx - sk},${oy + yy + half - or - sk}`,
+      `${ox + xx - sk},${oy + yy + or + sk}`
+    ].join(' ');
+    return `<polygon points="${pts}" fill="${FILL}" stroke="${STROKE}" stroke-width="${strokeW}" stroke-linejoin="round"/>`;
+  }
+
+  function drawDigit(ox, oy, segs) {
+    const [a, b, c, d, e, f, g] = segs;
+    return [
+      hbar(ox, oy, 0,   a),
+      vbar(ox, oy, 0,   0,   b),
+      vbar(ox, oy, w,   0,   c),
+      hbar(ox, oy, h/2, d),
+      vbar(ox, oy, 0,   h/2, e),
+      vbar(ox, oy, w,   h/2, f),
+      hbar(ox, oy, h,   g)
+    ].join('');
+  }
+
+  let x = pad;
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (part.type === 'dot') {
+      const cx = x + dotW / 2;
+      const cy = pad + h - thick * 0.55;
+      const r  = thick * 0.45;
+      out.push(`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${FILL}" stroke="${STROKE}" stroke-width="${strokeW}"/>`);
+    } else {
+      const pat = SEG_PATTERNS[part.char];
+      if (pat) {
+        out.push(drawDigit(x, pad, pat));
+      } else {
+        out.push(`<text x="${x + w / 2}" y="${pad + h * 0.7}" text-anchor="middle" fill="${STROKE}" font-size="${h * 0.7}" font-family="monospace">${part.char}</text>`);
+      }
+    }
+    x += part.width + (i < parts.length - 1 ? gap : 0);
+  }
+
+  out.push('</svg>');
+  return out.join('');
+}
+
+function render() {
+  document.getElementById('preview').innerHTML = drawSVG(getParams(), false);
+}
+
+document.getElementById('dlBtn').onclick = function () {
+  const p = getParams();
+  const svgStr = drawSVG(p, true);
+  const parser = new DOMParser();
+  const svgEl  = parser.parseFromString(svgStr, 'image/svg+xml').documentElement;
+  const W = +svgEl.getAttribute('width');
+  const H = +svgEl.getAttribute('height');
+
+  const canvas = document.createElement('canvas');
+  canvas.width  = W * 2;
+  canvas.height = H * 2;
+  const ctx = canvas.getContext('2d');
+
+  const blob = new Blob([svgStr], { type: 'image/svg+xml' });
+  const url  = URL.createObjectURL(blob);
+  const img  = new Image();
+  img.onload = function () {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.scale(2, 2);
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    const safe = p.text.replace(/\./g, '_').replace(/-/g, 'm');
+    a.download = `7seg_${safe}.png`;
+    a.click();
+  };
+  img.src = url;
+};
+
+['numInput', 'segSize', 'segThick', 'strokeW', 'gap', 'pad'].forEach(id => {
+  document.getElementById(id).addEventListener('input', e => {
+    const vEl = document.getElementById(id + 'Val');
+    if (vEl) vEl.textContent = e.target.value;
+    render();
+  });
+});
+
+render();
+</script>
+</body>
+</html>
