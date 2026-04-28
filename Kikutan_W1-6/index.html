@@ -1,1 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
 
+<meta charset="UTF-8">
+<title>ボキャコン対策</title>
+<style>
+a {
+  position: absolute;
+  top:0;
+  right:0;
+  z-index: 200;
+  font-size: 1.5em;
+  font-family: sans-serif;
+  font-weight: bold;
+}
+#toggle{
+ display: none;
+}
+.lq, .la{
+ font-family: sans-serif;
+ font-size: 2em;
+ background-color: #00000066;
+ font-weight: bold;
+ position: fixed;
+ top: 0;
+ left: 2em;
+}
+.lq{
+ display: block;
+ z-index: 6;
+}
+.la{
+ display: none;
+ z-index: 2;
+}
+img{
+ width: 100vw;
+}
+.q{
+ display: block;
+ position: absolute;
+ top: 0;
+ left: 0;
+ z-index: 5;
+}
+.a{
+ display: none;
+ position: absolute;
+ top: 0;
+ left: 0;
+ z-index: 1;
+}
+#toggle:checked ~ .q{
+ display: none;
+}
+#toggle:checked ~ .lq{
+ display: none;
+}
+#toggle:checked ~ .a{
+ display: block;
+}
+#toggle:checked ~ .la{
+ display: block;
+}
+</style>
+</head>
+<a href="https://ankilot.com/view/?id=C5yDwgEZxL">Ankilot版</a>
+<div class="b">
+<input type="checkbox" id="toggle">
+<label class="lq" for="toggle">答えを表示する</label>
+<label class="la" for="toggle">答えを表示しない</label>
+<div class="q">
+  <img src="./Q1.jpeg">
+  <img src="./Q2.jpeg">
+  <img src="./Q3.jpeg">
+  <img src="./Q4.jpeg">
+  <img src="./Q5.jpeg">
+  <img src="./Q6.jpeg">
+  <img src="./Q7.jpeg">
+  <img src="./Q8.jpeg">
+  <img src="./Q9.jpeg">
+  <img src="./Q10.jpeg">
+</div>
+<div class="a">
+    <img src="./A1.jpeg">
+  <img src="./A2.jpeg">
+  <img src="./A3.jpeg">
+  <img src="./A4.jpeg">
+  <img src="./A5.jpeg">
+  <img src="./A6.jpeg">
+  <img src="./A7.jpeg">
+  <img src="./A8.jpeg">
+  <img src="./A9.jpeg">
+  <img src="./A10.jpeg">
+</div>
+</div>
+</html>
