@@ -100,6 +100,7 @@
     grid-column: 2 / 4;
     background: var(--surface2);
     border: 1px solid var(--border);
+    color: var(--text);
     border-radius: 6px;
     color: var(--text);
     font-family: inherit;
@@ -225,7 +226,7 @@
   </div>
 
   <button class="dl-btn" id="dlBtn">↓ PNG ダウンロード（透過背景）</button>
-  <p class="note">プレビューは白背景 — 出力PNGは透過背景 / 2倍解像度</p>
+  <p class="note">プレビューは白背景 — 出力PNGも白背景 / 2倍解像度</p>
 
 </div>
 
@@ -280,7 +281,7 @@ function drawSVG(p, transparent) {
   const totalW = parts.reduce((s, pt, i) => s + pt.width + (i < parts.length - 1 ? gap : 0), 0);
   const svgW   = totalW + pad * 2;
   const svgH   = h + pad * 2;
-  const bg     = transparent ? 'transparent' : '#ffffff';
+  const bg     = '#ffffff';
 
   let out = [`<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}">`,
              `<rect width="${svgW}" height="${svgH}" fill="${bg}"/>`];
